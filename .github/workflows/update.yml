@@ -1,0 +1,70 @@
+name: Update FitHub Graph
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 5 * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate fitness graph
+        env:
+          STRAVA_CLIENT_ID: ${{ secrets.STRAVA_CLIENT_ID }}
+          STRAVA_CLIENT_SECRET: ${{ secrets.STRAVA_CLIENT_SECRET }}
+          STRAVA_REFRESH_TOKEN: ${{ secrets.STRAVA_REFRESH_TOKEN }}
+          FITHUB_THRESHOLDS: ${{ vars.FITHUB_THRESHOLDS }}
+          FITHUB_REFRESH_TOKEN_OUTPUT: ${{ runner.temp }}/strava_refresh_token.txt
+        run: npm run generate
+
+      - name: Rotate Strava refresh token secret
+        env:
+          GH_TOKEN: ${{ secrets.REPO_ADMIN_TOKEN }}
+          REFRESH_TOKEN_FILE: ${{ runner.temp }}/strava_refresh_token.txt
+        run: |
+          if [[ -z "${GH_TOKEN}" ]]; then
+            echo "REPO_ADMIN_TOKEN not set; skipping STRAVA_REFRESH_TOKEN rotation."
+            exit 0
+          fi
+
+          if [[ ! -f "${REFRESH_TOKEN_FILE}" ]]; then
+            echo "Refresh token output file not found."
+            exit 1
+          fi
+
+          NEW_REFRESH_TOKEN="$(cat "${REFRESH_TOKEN_FILE}")"
+          if [[ -z "${NEW_REFRESH_TOKEN}" ]]; then
+            echo "Refresh token output file was empty."
+            exit 1
+          fi
+
+          gh secret set STRAVA_REFRESH_TOKEN --body "${NEW_REFRESH_TOKEN}"
+
+      - name: Commit graph artifacts
+        run: |
+          if [[ -n "$(git status --porcelain dist/fithub.svg dist/fithub-levels.json)" ]]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add dist/fithub.svg dist/fithub-levels.json
+            git commit -m "chore: update FitHub graph"
+            git push
+          else
+            echo "No graph changes"
+          fi

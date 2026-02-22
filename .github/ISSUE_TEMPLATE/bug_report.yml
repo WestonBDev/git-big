@@ -1,0 +1,31 @@
+name: Bug report
+description: Report incorrect behavior in graph generation or rendering.
+title: "[Bug] "
+labels:
+  - bug
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: Describe expected behavior and actual behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      description: Include commands, environment variables, and date used.
+      placeholder: |
+        1. Set env vars...
+        2. Run npm run generate...
+        3. Compare dist/fithub.svg...
+    validations:
+      required: true
+  - type: input
+    id: node
+    attributes:
+      label: Node version
+      placeholder: "20.x"
+    validations:
+      required: true
