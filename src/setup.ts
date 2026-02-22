@@ -49,30 +49,6 @@ export function validateRepoSlug(value: string): string {
   return trimmed;
 }
 
-export function normalizeThresholdInput(input: string | undefined | null): string | null {
-  const value = input?.trim() ?? "";
-  if (!value) {
-    return null;
-  }
-
-  const parts = value.split(",").map((part) => part.trim());
-  if (parts.length !== 4) {
-    throw new Error("Thresholds must include exactly 4 comma-separated integers");
-  }
-
-  const parsed = parts.map((part) => Number.parseInt(part, 10));
-  if (parsed.some((entry) => !Number.isInteger(entry))) {
-    throw new Error("Thresholds must include exactly 4 comma-separated integers");
-  }
-
-  const [first, second, third, fourth] = parsed;
-  if (!(first! < second! && second! < third! && third! < fourth!)) {
-    throw new Error("Thresholds must be strictly ascending");
-  }
-
-  return parsed.join(",");
-}
-
 export function isAffirmative(input: string, defaultValue: boolean): boolean {
   const normalized = input.trim().toLowerCase();
   if (!normalized) {
@@ -99,5 +75,14 @@ export function buildThemeAwareWidgetMarkdown(repoSlug: string, branch: string =
   return [
     `![Fitness Graph](<${baseUrl}/fithub-light.svg#gh-light-mode-only>)`,
     `![Fitness Graph](<${baseUrl}/fithub-dark.svg#gh-dark-mode-only>)`
+  ].join("\n");
+}
+
+export function buildHostedWidgetMarkdown(baseUrl: string, githubLogin: string): string {
+  const normalizedBase = baseUrl.replace(/\/+$/, "");
+  const pathLogin = encodeURIComponent(githubLogin.trim());
+  return [
+    `![Fitness Graph](<${normalizedBase}/api/graph/${pathLogin}.svg?theme=light#gh-light-mode-only>)`,
+    `![Fitness Graph](<${normalizedBase}/api/graph/${pathLogin}.svg?theme=dark#gh-dark-mode-only>)`
   ].join("\n");
 }

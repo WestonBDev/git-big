@@ -1,8 +1,8 @@
 # FitHub Graph
 
-A fitness contribution graph for your GitHub profile. Green is code. Red is discipline.
+A fitness contribution graph for your GitHub profile.
 
-Make this:
+Makes this:
 
 <img src="./assets/fithub-preview.svg" alt="FitHub Graph" />
 
@@ -12,12 +12,6 @@ with this:
 ![Fitness Graph](https://raw.githubusercontent.com/WestonBDev/git-big/main/dist/fithub-light.svg#gh-light-mode-only)
 ![Fitness Graph](https://raw.githubusercontent.com/WestonBDev/git-big/main/dist/fithub-dark.svg#gh-dark-mode-only)
 ```
-
-## Why
-
-GitHub's contribution graph is one of the best data visualizations out there -- a year of work at a glance. FitHub does the same thing for your workouts. It pulls your Strava activity data daily, maps minutes to intensity levels, and renders a red contribution graph SVG that lives right next to your green one.
-
-A GitHub Actions cron runs every day, refreshes your Strava token, and commits the updated graph. Your profile README stays current without you lifting a finger (except at the gym).
 
 ## Setup
 
@@ -40,19 +34,39 @@ The wizard handles OAuth, sets your repo secrets, and optionally kicks off the f
 ![Fitness Graph](https://raw.githubusercontent.com/<your-username>/git-big/main/dist/fithub-dark.svg#gh-dark-mode-only)
 ```
 
-## Custom Thresholds
+## Importing Historical Data
 
-By default, daily workout minutes map to intensity levels like this:
+FitHub reads from Strava, so your workout history needs to live there. If you've been tracking with another app, here's how to get that data in.
 
-| Level | Minutes |
-|-------|---------|
-| 0     | 0       |
-| 1     | 1--19   |
-| 2     | 20--39  |
-| 3     | 40--59  |
-| 4     | 60+     |
+**Garmin / Wahoo / other device apps** -- Connect directly at [strava.com/settings/apps](https://www.strava.com/settings/apps). Most integrations will backfill at least a portion of your history automatically.
 
-You can customize these by setting the `FITHUB_THRESHOLDS` repo variable to four comma-separated ascending integers. For example, `1,30,60,90` would shift the scale for heavier training.
+**Apple Health** -- The Apple Health integration only syncs new activities going forward. This repo includes a built-in converter for older workouts:
+
+1. Open the Health app on your iPhone
+2. Tap your profile picture, then **Export All Health Data**
+3. Unzip the export on your computer
+4. Run the converter:
+
+```bash
+npx tsx scripts/apple-health-to-tcx.ts ~/Downloads/apple_health_export/export.xml
+```
+
+This parses your workouts, skips any that already have GPS route files, and writes TCX files to a `strava-upload-tcx/` folder next to the export. No health data is copied into the repo.
+
+5. Upload the generated TCX files to [strava.com/upload/select](https://www.strava.com/upload/select) (25 at a time)
+6. Upload the GPX files from `workout-routes/` for activities with GPS data
+
+**Other platforms** -- If you can export your data as `.fit`, `.tcx`, or `.gpx` files, upload them directly at [strava.com/upload/select](https://www.strava.com/upload/select). For 100+ files, contact [Strava Support](https://support.strava.com) for bulk import help.
+
+Once your history is in Strava, re-run `npm run generate` or trigger the workflow from the Actions tab and the full year will fill in.
+
+## Relative Intensity Scaling
+
+FitHub uses GitHub-style relative intensity levels instead of fixed minute cutoffs.
+
+- Level `0` is always no activity.
+- Levels `1` through `4` are derived from your own rolling yearly distribution.
+- Outlier days are handled using the same quartile/outlier approach used by `githubchart` and `githubstats`.
 
 ## Contributing
 

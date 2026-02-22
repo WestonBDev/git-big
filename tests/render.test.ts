@@ -17,7 +17,7 @@ describe("render", () => {
     expect(cells.length).toBeGreaterThanOrEqual(365);
     expect(cells.length).toBeLessThanOrEqual(371);
     expect(cells[0]?.day).toBe(0);
-    expect(cells[cells.length - 1]?.date).toBe("2026-02-19");
+    expect(cells[cells.length - 1]?.date).toBe("2026-02-21");
     expect(new Set(cells.map((cell: { week: number }) => cell.week)).size).toBe(53);
   });
 
@@ -31,15 +31,34 @@ describe("render", () => {
   });
 
   it("keeps adjacent month labels visually separated", () => {
-    const cells = buildContributionGrid({}, new Date("2026-02-19T00:00:00Z"));
+    const cells = buildContributionGrid({}, new Date("2026-02-22T00:00:00Z"));
     const labels = buildMonthLabels(cells);
 
     for (let index = 1; index < labels.length; index += 1) {
       const previous = labels[index - 1];
       const current = labels[index];
 
-      expect(current?.x).toBeGreaterThan((previous?.x ?? 0) + 20);
+      expect(current?.x).toBeGreaterThanOrEqual((previous?.x ?? 0) + 28);
     }
+  });
+
+  it("retains both feb and mar labels at year boundary", () => {
+    const cells = buildContributionGrid({}, new Date("2026-02-22T00:00:00Z"));
+    const labels = buildMonthLabels(cells);
+    const monthTexts = labels.map((label) => label.text);
+
+    expect(monthTexts[0]).toBe("Feb");
+    expect(monthTexts[1]).toBe("Mar");
+  });
+
+  it("renders full trailing week through saturday", () => {
+    const cells = buildContributionGrid({}, new Date("2026-02-22T00:00:00Z"));
+    const lastWeek = Math.max(...cells.map((cell) => cell.week));
+    const trailingWeek = cells.filter((cell) => cell.week === lastWeek);
+
+    expect(trailingWeek.length).toBe(7);
+    expect(trailingWeek[0]?.date).toBe("2026-02-22");
+    expect(trailingWeek[trailingWeek.length - 1]?.date).toBe("2026-02-28");
   });
 
   it("renders valid svg with level-based fill colors", () => {
@@ -89,12 +108,56 @@ describe("render", () => {
       palette: LIGHT_RED_PALETTE
     });
 
-    expect(svg).toContain('fill="#ffffff"');
+    expect(svg).not.toContain('<rect width="100%" height="100%"');
     expect(svg).toContain('fill="#57606a"');
 
     const intenseDayMatch = svg.match(
       /<rect[^>]*data-date="2026-02-18"[^>]*fill="([^"]+)"/
     );
     expect(intenseDayMatch?.[1]).toBe("#cf222e");
+  });
+
+  it("uses transparent background for both light and dark themes", () => {
+    const darkSvg = renderContributionGraph({
+      levelsByDate: {},
+      endDate,
+      theme: "dark"
+    });
+    const lightSvg = renderContributionGraph({
+      levelsByDate: {},
+      endDate,
+      theme: "light"
+    });
+
+    expect(darkSvg).not.toContain('<rect width="100%" height="100%"');
+    expect(lightSvg).not.toContain('<rect width="100%" height="100%"');
+  });
+
+  it("renders a yearly activity summary header", () => {
+    const svg = renderContributionGraph({
+      levelsByDate: {},
+      minutesByDate: {
+        "2026-02-18": 120,
+        "2026-02-17": 30
+      },
+      endDate
+    });
+
+    expect(svg).toContain('class="summary"');
+    expect(svg).toContain("150 active minutes in the last year");
+  });
+
+  it("includes workout count in summary when available", () => {
+    const svg = renderContributionGraph({
+      levelsByDate: {},
+      minutesByDate: {
+        "2026-02-18": 1250
+      },
+      sessionCount: 34,
+      endDate
+    });
+
+    expect(svg).toContain("34 workouts");
+    expect(svg).toContain("1,250 active minutes in the last year");
   });
 });

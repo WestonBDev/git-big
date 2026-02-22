@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   aggregateMinutesByDate,
+  deriveIntensityBoundaries,
   bucketMinutes,
   fillDateRange,
   normalizeMinutesByDate
@@ -21,37 +22,68 @@ describe("normalize", () => {
     });
   });
 
-  it("maps minute boundaries to the expected level", () => {
-    expect(bucketMinutes(0)).toBe(0);
-    expect(bucketMinutes(1)).toBe(1);
-    expect(bucketMinutes(19)).toBe(1);
-    expect(bucketMinutes(20)).toBe(2);
-    expect(bucketMinutes(39)).toBe(2);
-    expect(bucketMinutes(40)).toBe(3);
-    expect(bucketMinutes(59)).toBe(3);
-    expect(bucketMinutes(60)).toBe(4);
-    expect(bucketMinutes(180)).toBe(4);
+  it("derives github-like quartile boundaries from score distribution", () => {
+    const boundaries = deriveIntensityBoundaries([0, 1, 2, 3, 4, 8]);
+    expect(boundaries).toEqual([0, 2, 4, 6, 8]);
   });
 
-  it("normalizes an aggregated map with custom thresholds", () => {
-    expect(
-      normalizeMinutesByDate(
-        {
-          "2026-02-16": 0,
-          "2026-02-17": 15,
-          "2026-02-18": 25,
-          "2026-02-19": 45,
-          "2026-02-20": 90
-        },
-        [1, 20, 40, 60]
-      )
-    ).toEqual({
+  it("maps minutes to levels using derived boundaries", () => {
+    const boundaries = deriveIntensityBoundaries([0, 1, 2, 3, 4, 8]);
+
+    expect(bucketMinutes(0, boundaries)).toBe(0);
+    expect(bucketMinutes(1, boundaries)).toBe(1);
+    expect(bucketMinutes(2, boundaries)).toBe(1);
+    expect(bucketMinutes(3, boundaries)).toBe(2);
+    expect(bucketMinutes(4, boundaries)).toBe(2);
+    expect(bucketMinutes(8, boundaries)).toBe(4);
+  });
+
+  it("normalizes an aggregated map with relative intensity levels", () => {
+    expect(normalizeMinutesByDate({
       "2026-02-16": 0,
       "2026-02-17": 1,
       "2026-02-18": 2,
       "2026-02-19": 3,
-      "2026-02-20": 4
+      "2026-02-20": 4,
+      "2026-02-21": 8
+    })).toEqual({
+      "2026-02-16": 0,
+      "2026-02-17": 1,
+      "2026-02-18": 1,
+      "2026-02-19": 2,
+      "2026-02-20": 2,
+      "2026-02-21": 4
     });
+  });
+
+  it("keeps zeros at level 0 when all days are inactive", () => {
+    expect(
+      normalizeMinutesByDate({
+        "2026-02-16": 0,
+        "2026-02-17": 0,
+        "2026-02-18": 0
+      })
+    ).toEqual({
+      "2026-02-16": 0,
+      "2026-02-17": 0,
+      "2026-02-18": 0
+    });
+  });
+
+  it("reduces outlier skew using github-style outlier handling", () => {
+    const scores = [
+      ...Array.from({ length: 300 }, () => 0),
+      1,
+      2,
+      3,
+      4,
+      1000
+    ];
+    const boundaries = deriveIntensityBoundaries(scores);
+
+    expect(boundaries).toEqual([0, 1, 2, 3, 1000]);
+    expect(bucketMinutes(4, boundaries)).toBe(4);
+    expect(bucketMinutes(1000, boundaries)).toBe(4);
   });
 
   it("fills missing days including leap day", () => {

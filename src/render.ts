@@ -1,4 +1,12 @@
-import { addDaysUtc, formatDateUtc, listDateRange, parseIsoDate, startOfUtcDay, startOfWeekSunday } from "./date.js";
+import {
+  addDaysUtc,
+  endOfWeekSaturday,
+  formatDateUtc,
+  listDateRange,
+  parseIsoDate,
+  startOfUtcDay,
+  startOfWeekSunday
+} from "./date.js";
 
 export const RED_PALETTE = ["#161b22", "#3d0f0f", "#6b1a1a", "#a12c2c", "#d64545"] as const;
 export const LIGHT_RED_PALETTE = ["#ebedf0", "#ffebe9", "#ffcecb", "#ffaba8", "#cf222e"] as const;
@@ -9,17 +17,18 @@ const CELL_GAP = 3;
 const CELL_RADIUS = 2;
 const LABEL_GUTTER_WIDTH = 28;
 const HEADER_ROW_HEIGHT = 13;
+const SUMMARY_ROW_HEIGHT = 24;
 const LABEL_FONT =
   "-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif";
+const MIN_MONTH_LABEL_SPACING = 28;
+const NUMBER_FORMATTER = new Intl.NumberFormat("en-US");
 
 const THEME_STYLE = {
   dark: {
-    backgroundColor: "#0d1117",
     labelColor: "#7d8590",
     palette: RED_PALETTE
   },
   light: {
-    backgroundColor: "#ffffff",
     labelColor: "#57606a",
     palette: LIGHT_RED_PALETTE
   }
@@ -49,6 +58,7 @@ export interface MonthLabel {
 export interface RenderOptions {
   levelsByDate: Record<string, number>;
   minutesByDate?: Record<string, number>;
+  sessionCount?: number;
   endDate?: Date;
   theme?: GraphTheme;
   palette?: readonly [string, string, string, string, string];
@@ -93,6 +103,29 @@ function tooltipLabel(date: string, minutesByDate: Record<string, number> | unde
   return `${minutes} minutes of activity on ${date}`;
 }
 
+function yearlySummaryText(
+  minutesByDate: Record<string, number> | undefined,
+  sessionCount: number | undefined
+): string {
+  const totalMinutes = Object.values(minutesByDate ?? {}).reduce((sum, value) => {
+    if (!Number.isFinite(value) || value <= 0) {
+      return sum;
+    }
+
+    return sum + Math.floor(value);
+  }, 0);
+  const formattedMinutes = NUMBER_FORMATTER.format(totalMinutes);
+  const minuteWord = totalMinutes === 1 ? "minute" : "minutes";
+
+  if (typeof sessionCount === "number" && Number.isFinite(sessionCount) && sessionCount >= 0) {
+    const normalizedSessions = Math.floor(sessionCount);
+    const sessionWord = normalizedSessions === 1 ? "workout" : "workouts";
+    return `${NUMBER_FORMATTER.format(normalizedSessions)} ${sessionWord} · ${formattedMinutes} active ${minuteWord} in the last year`;
+  }
+
+  return `${formattedMinutes} active ${minuteWord} in the last year`;
+}
+
 function gridStartDate(endDate: Date): Date {
   const oneYearBack = addDaysUtc(startOfUtcDay(endDate), -364);
   return startOfWeekSunday(oneYearBack);
@@ -104,7 +137,8 @@ export function buildContributionGrid(
 ): ContributionCell[] {
   const normalizedEnd = startOfUtcDay(endDate);
   const start = gridStartDate(normalizedEnd);
-  const dates = listDateRange(start, normalizedEnd);
+  const renderEnd = endOfWeekSaturday(normalizedEnd);
+  const dates = listDateRange(start, renderEnd);
 
   return dates.map((date, index) => {
     const week = Math.floor(index / 7);
@@ -144,12 +178,19 @@ export function buildMonthLabels(cells: ReadonlyArray<ContributionCell>): MonthL
     }
 
     seenMonths.add(yearMonth);
-    labels.push({
+    const nextLabel = {
       date: cell.date,
       text: MONTH_FORMATTER.format(date),
       week: cell.week,
       x: cell.x
-    });
+    };
+
+    const lastLabel = labels[labels.length - 1];
+    if (lastLabel && nextLabel.x - lastLabel.x < MIN_MONTH_LABEL_SPACING) {
+      nextLabel.x = lastLabel.x + MIN_MONTH_LABEL_SPACING;
+    }
+
+    labels.push(nextLabel);
   }
 
   return labels;
@@ -161,6 +202,7 @@ export function renderContributionGraph(options: RenderOptions): string {
   const themeStyle = THEME_STYLE[theme];
   const palette = options.palette ?? themeStyle.palette;
   const title = options.title ?? "Fitness contributions";
+  const summaryText = yearlySummaryText(options.minutesByDate, options.sessionCount);
 
   const cells = buildContributionGrid(options.levelsByDate, endDate);
   const monthLabels = buildMonthLabels(cells);
@@ -168,7 +210,7 @@ export function renderContributionGraph(options: RenderOptions): string {
   const pitch = CELL_SIZE + CELL_GAP;
   const weeks = Math.max(...cells.map((cell) => cell.week), 0) + 1;
   const gridOffsetX = LABEL_GUTTER_WIDTH + CELL_GAP;
-  const gridOffsetY = HEADER_ROW_HEIGHT + CELL_GAP;
+  const gridOffsetY = SUMMARY_ROW_HEIGHT + HEADER_ROW_HEIGHT + CELL_GAP;
   const gridWidth = weeks * pitch - CELL_GAP;
   const gridHeight = 7 * pitch - CELL_GAP;
   const contentWidth = gridOffsetX + gridWidth;
@@ -191,9 +233,11 @@ export function renderContributionGraph(options: RenderOptions): string {
   const monthText = monthLabels
     .map(
       (label) =>
-        `<text class="month" x="${gridOffsetX + label.x}" y="10" fill="${themeStyle.labelColor}" font-size="12" font-family="${LABEL_FONT}">${label.text}</text>`
+        `<text class="month" x="${gridOffsetX + label.x}" y="${SUMMARY_ROW_HEIGHT + 10}" fill="${themeStyle.labelColor}" font-size="12" font-family="${LABEL_FONT}">${label.text}</text>`
     )
     .join("");
+
+  const summary = `<text class="summary" x="0" y="16" fill="${themeStyle.labelColor}" font-size="18" font-family="${LABEL_FONT}">${escapeXml(summaryText)}</text>`;
 
   const weekdayText = weekdayLabels
     .map(({ text, day }) => {
@@ -211,5 +255,5 @@ export function renderContributionGraph(options: RenderOptions): string {
     })
     .join("");
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="fithub-title"><title id="fithub-title">${escapeXml(title)}</title><desc>Daily workout intensity rendered like a GitHub contribution graph.</desc><rect width="100%" height="100%" fill="${themeStyle.backgroundColor}"/><g transform="translate(${marginLeft},${marginTop})"><g>${monthText}</g><g>${weekdayText}</g><g>${rects}</g></g></svg>\n`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="fithub-title"><title id="fithub-title">${escapeXml(title)}</title><desc>Daily workout intensity rendered like a GitHub contribution graph.</desc><g transform="translate(${marginLeft},${marginTop})"><g>${summary}</g><g>${monthText}</g><g>${weekdayText}</g><g>${rects}</g></g></svg>\n`;
 }

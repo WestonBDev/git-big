@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  buildHostedWidgetMarkdown,
   buildThemeAwareWidgetMarkdown,
   buildStravaAuthorizeUrl,
   isAffirmative,
-  normalizeThresholdInput,
   parseRepoSlug
 } from "../src/setup.js";
 
@@ -30,21 +30,6 @@ describe("setup helpers", () => {
     expect(url).toContain("scope=activity%3Aread_all");
   });
 
-  it("normalizes threshold value", () => {
-    expect(normalizeThresholdInput(" 1, 20,40, 60 ")).toBe("1,20,40,60");
-    expect(normalizeThresholdInput("")).toBeNull();
-  });
-
-  it("rejects invalid thresholds", () => {
-    expect(() => normalizeThresholdInput("1,20,40")).toThrowError(
-      "Thresholds must include exactly 4 comma-separated integers"
-    );
-
-    expect(() => normalizeThresholdInput("1,20,20,60")).toThrowError(
-      "Thresholds must be strictly ascending"
-    );
-  });
-
   it("parses yes/no responses", () => {
     expect(isAffirmative("y", true)).toBe(true);
     expect(isAffirmative("yes", false)).toBe(true);
@@ -58,5 +43,12 @@ describe("setup helpers", () => {
 
     expect(snippet).toContain("fithub-light.svg#gh-light-mode-only");
     expect(snippet).toContain("fithub-dark.svg#gh-dark-mode-only");
+  });
+
+  it("builds hosted profile widget markdown", () => {
+    const snippet = buildHostedWidgetMarkdown("https://fithub.westonb.dev", "WestonBDev");
+
+    expect(snippet).toContain("https://fithub.westonb.dev/api/graph/WestonBDev.svg?theme=light#gh-light-mode-only");
+    expect(snippet).toContain("https://fithub.westonb.dev/api/graph/WestonBDev.svg?theme=dark#gh-dark-mode-only");
   });
 });

@@ -2,14 +2,12 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { addDaysUtc, startOfUtcDay, startOfWeekSunday } from "./date.js";
+import { addDaysUtc, endOfWeekSaturday, startOfUtcDay, startOfWeekSunday } from "./date.js";
 import { fetchLastYearActivitiesWithRefreshToken, type StravaCredentials } from "./fetch.js";
 import {
-  DEFAULT_THRESHOLDS,
   aggregateMinutesByDate,
   fillDateRange,
-  normalizeMinutesByDate,
-  type Thresholds
+  normalizeMinutesByDate
 } from "./normalize.js";
 import { renderContributionGraph } from "./render.js";
 
@@ -35,33 +33,6 @@ export function parseEndDate(configuredEndDate: string | undefined): Date {
   return startOfUtcDay(parsed);
 }
 
-export function parseThresholds(configured: string | undefined): Thresholds {
-  if (!configured) {
-    return DEFAULT_THRESHOLDS;
-  }
-
-  const values = configured
-    .split(",")
-    .map((value) => Number.parseInt(value.trim(), 10))
-    .filter((value) => Number.isFinite(value));
-
-  if (values.length !== 4) {
-    throw new Error(
-      `Invalid FITHUB_THRESHOLDS value: ${configured}. Expected 4 comma-separated integers.`
-    );
-  }
-
-  const parsedThresholds: Thresholds = [values[0]!, values[1]!, values[2]!, values[3]!];
-  const [level1, level2, level3, level4] = parsedThresholds;
-  if (!(level1 < level2 && level2 < level3 && level3 < level4)) {
-    throw new Error(
-      `Invalid FITHUB_THRESHOLDS value: ${configured}. Thresholds must be strictly ascending.`
-    );
-  }
-
-  return parsedThresholds;
-}
-
 async function generateGraph(
   credentials: StravaCredentials,
   outputPaths: {
@@ -72,22 +43,23 @@ async function generateGraph(
   }
 ): Promise<void> {
   const endDate = parseEndDate(process.env.FITHUB_END_DATE);
-  const thresholds = parseThresholds(process.env.FITHUB_THRESHOLDS);
   const refreshTokenOutputPath = process.env.FITHUB_REFRESH_TOKEN_OUTPUT;
 
   const { activities, refreshToken } = await fetchLastYearActivitiesWithRefreshToken(credentials, endDate);
   const minutesByDate = aggregateMinutesByDate(activities);
-  const levelsByDate = normalizeMinutesByDate(minutesByDate, thresholds);
-
   const yearStart = addDaysUtc(endDate, -364);
+  const lastYearMinutesByDate = fillDateRange(minutesByDate, yearStart, endDate);
+  const lastYearLevelsByDate = normalizeMinutesByDate(lastYearMinutesByDate);
+
   const renderStart = startOfWeekSunday(addDaysUtc(endDate, -364));
-  const lastYearLevelsByDate = fillDateRange(levelsByDate, yearStart, endDate);
-  const filledMinutesByDate = fillDateRange(minutesByDate, renderStart, endDate);
-  const filledLevelsByDate = fillDateRange(levelsByDate, renderStart, endDate);
+  const renderEnd = endOfWeekSaturday(endDate);
+  const filledMinutesByDate = fillDateRange(minutesByDate, renderStart, renderEnd);
+  const filledLevelsByDate = fillDateRange(lastYearLevelsByDate, renderStart, renderEnd);
 
   const darkSvg = renderContributionGraph({
     levelsByDate: filledLevelsByDate,
     minutesByDate: filledMinutesByDate,
+    sessionCount: activities.length,
     endDate,
     theme: "dark"
   });
@@ -95,6 +67,7 @@ async function generateGraph(
   const lightSvg = renderContributionGraph({
     levelsByDate: filledLevelsByDate,
     minutesByDate: filledMinutesByDate,
+    sessionCount: activities.length,
     endDate,
     theme: "light"
   });

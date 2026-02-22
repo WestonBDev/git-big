@@ -12,5 +12,5 @@
     "resolveJsonModule": true,
     "noUncheckedIndexedAccess": true
   },
-  "include": ["src", "tests", "scripts", "vitest.config.ts", "eslint.config.mjs"]
+  "include": ["src", "tests", "scripts", "api", "vitest.config.ts", "eslint.config.mjs"]
 }

@@ -14,6 +14,11 @@ export function startOfWeekSunday(date: Date): Date {
   return addDaysUtc(normalized, -normalized.getUTCDay());
 }
 
+export function endOfWeekSaturday(date: Date): Date {
+  const normalized = startOfUtcDay(date);
+  return addDaysUtc(normalized, 6 - normalized.getUTCDay());
+}
+
 export function formatDateUtc(date: Date): string {
   const year = date.getUTCFullYear();
   const month = `${date.getUTCMonth() + 1}`.padStart(2, "0");

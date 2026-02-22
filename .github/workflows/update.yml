@@ -30,7 +30,6 @@ jobs:
           STRAVA_CLIENT_ID: ${{ secrets.STRAVA_CLIENT_ID }}
           STRAVA_CLIENT_SECRET: ${{ secrets.STRAVA_CLIENT_SECRET }}
           STRAVA_REFRESH_TOKEN: ${{ secrets.STRAVA_REFRESH_TOKEN }}
-          FITHUB_THRESHOLDS: ${{ vars.FITHUB_THRESHOLDS }}
           FITHUB_REFRESH_TOKEN_OUTPUT: ${{ runner.temp }}/strava_refresh_token.txt
         run: npm run generate
 

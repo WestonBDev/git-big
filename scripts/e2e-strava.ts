@@ -68,12 +68,12 @@ async function validateArtifacts(cwd: string): Promise<{ totalDays: number; acti
     throw new Error("dist/fithub.svg does not contain day cells.");
   }
 
-  if (!darkSvg.includes('fill="#0d1117"')) {
-    throw new Error("dist/fithub-dark.svg is missing the dark theme background.");
+  if (darkSvg.includes('<rect width="100%" height="100%"')) {
+    throw new Error("dist/fithub-dark.svg should not include a full-canvas background rect.");
   }
 
-  if (!lightSvg.includes('fill="#ffffff"')) {
-    throw new Error("dist/fithub-light.svg is missing the light theme background.");
+  if (lightSvg.includes('<rect width="100%" height="100%"')) {
+    throw new Error("dist/fithub-light.svg should not include a full-canvas background rect.");
   }
 
   const parsedLevels = JSON.parse(levelsRaw) as Record<string, number>;

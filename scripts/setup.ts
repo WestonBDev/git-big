@@ -6,7 +6,6 @@ import {
   buildStravaAuthorizeUrl,
   buildThemeAwareWidgetMarkdown,
   isAffirmative,
-  normalizeThresholdInput,
   parseRepoSlug,
   validateRepoSlug
 } from "../src/setup.js";
@@ -91,10 +90,6 @@ async function setRepoSecret(repo: string, name: string, value: string): Promise
   });
 }
 
-async function setRepoVariable(repo: string, name: string, value: string): Promise<void> {
-  await runCommand("gh", ["variable", "set", name, "--repo", repo, "--body", value]);
-}
-
 async function detectRepoSlug(): Promise<string | null> {
   try {
     const remote = await readCommandOutput("git", ["remote", "get-url", "origin"]);
@@ -155,11 +150,6 @@ async function main(): Promise<void> {
       "GitHub PAT for REPO_ADMIN_TOKEN (optional, press Enter to skip): "
     )).trim();
 
-    const thresholdInput = await rl.question(
-      "Custom thresholds (optional, format 1,20,40,60; Enter to skip): "
-    );
-    const thresholds = normalizeThresholdInput(thresholdInput);
-
     process.stdout.write("\nSaving repository secrets...\n");
     await setRepoSecret(repo, "STRAVA_CLIENT_ID", clientId);
     await setRepoSecret(repo, "STRAVA_CLIENT_SECRET", clientSecret);
@@ -167,11 +157,6 @@ async function main(): Promise<void> {
 
     if (adminToken) {
       await setRepoSecret(repo, "REPO_ADMIN_TOKEN", adminToken);
-    }
-
-    if (thresholds) {
-      process.stdout.write("Saving FITHUB_THRESHOLDS variable...\n");
-      await setRepoVariable(repo, "FITHUB_THRESHOLDS", thresholds);
     }
 
     const runWorkflowAnswer = await rl.question("Run 'Update FitHub Graph' workflow now? [Y/n]: ");
