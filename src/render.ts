@@ -16,8 +16,13 @@ const CELL_SIZE = 10;
 const CELL_GAP = 3;
 const CELL_RADIUS = 2;
 const LABEL_GUTTER_WIDTH = 28;
-const HEADER_ROW_HEIGHT = 13;
-const SUMMARY_ROW_HEIGHT = 24;
+const HEADER_HEIGHT = 32;
+const CARD_HEADER_HEIGHT = 18;
+const CARD_PADDING_X = 12;
+const CARD_PADDING_TOP = 12;
+const CARD_PADDING_BOTTOM = 12;
+const FOOTER_HEIGHT = 18;
+const FOOTER_TOP_GAP = 24;
 const LABEL_FONT =
   "-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif";
 const MIN_MONTH_LABEL_SPACING = 28;
@@ -25,11 +30,17 @@ const NUMBER_FORMATTER = new Intl.NumberFormat("en-US");
 
 const THEME_STYLE = {
   dark: {
-    labelColor: "#7d8590",
+    summaryColor: "#c9d1d9",
+    axisColor: "#7d8590",
+    mutedColor: "#7d8590",
+    cardBorder: "#30363d",
     palette: RED_PALETTE
   },
   light: {
-    labelColor: "#57606a",
+    summaryColor: "#24292f",
+    axisColor: "#24292f",
+    mutedColor: "#57606a",
+    cardBorder: "#d0d7de",
     palette: LIGHT_RED_PALETTE
   }
 } as const;
@@ -161,33 +172,30 @@ export function buildMonthLabels(cells: ReadonlyArray<ContributionCell>): MonthL
     return [];
   }
 
-  const seenMonths = new Set<string>();
   const labels: MonthLabel[] = [];
+  const weekCount = Math.max(...cells.map((cell) => cell.week), 0) + 1;
 
-  for (let index = 0; index < cells.length; index += 7) {
-    const cell = cells[index];
-    if (!cell) {
+  for (let week = 0; week < weekCount; week += 1) {
+    const weekCells = cells.filter((cell) => cell.week === week).sort((left, right) => left.day - right.day);
+    const monthStartCell = weekCells.find((cell) => {
+      const date = parseIsoDate(cell.date);
+      return date.getUTCDate() === 1;
+    });
+    if (!monthStartCell) {
       continue;
     }
 
-    const date = parseIsoDate(cell.date);
-    const yearMonth = `${date.getUTCFullYear()}-${date.getUTCMonth()}`;
-
-    if (seenMonths.has(yearMonth)) {
-      continue;
-    }
-
-    seenMonths.add(yearMonth);
+    const monthStartDate = parseIsoDate(monthStartCell.date);
     const nextLabel = {
-      date: cell.date,
-      text: MONTH_FORMATTER.format(date),
-      week: cell.week,
-      x: cell.x
+      date: monthStartCell.date,
+      text: MONTH_FORMATTER.format(monthStartDate),
+      week,
+      x: week * (CELL_SIZE + CELL_GAP)
     };
 
     const lastLabel = labels[labels.length - 1];
     if (lastLabel && nextLabel.x - lastLabel.x < MIN_MONTH_LABEL_SPACING) {
-      nextLabel.x = lastLabel.x + MIN_MONTH_LABEL_SPACING;
+      continue;
     }
 
     labels.push(nextLabel);
@@ -209,20 +217,23 @@ export function renderContributionGraph(options: RenderOptions): string {
 
   const pitch = CELL_SIZE + CELL_GAP;
   const weeks = Math.max(...cells.map((cell) => cell.week), 0) + 1;
-  const gridOffsetX = LABEL_GUTTER_WIDTH + CELL_GAP;
-  const gridOffsetY = SUMMARY_ROW_HEIGHT + HEADER_ROW_HEIGHT + CELL_GAP;
   const gridWidth = weeks * pitch - CELL_GAP;
   const gridHeight = 7 * pitch - CELL_GAP;
-  const contentWidth = gridOffsetX + gridWidth;
-  const contentHeight = gridOffsetY + gridHeight;
 
-  const marginTop = 14;
-  const marginLeft = 12;
-  const marginRight = 12;
-  const marginBottom = 12;
+  const outerMarginX = 10;
+  const outerMarginY = 10;
+  const cardX = outerMarginX;
+  const cardY = outerMarginY + HEADER_HEIGHT;
+  const gridOffsetX = cardX + CARD_PADDING_X + LABEL_GUTTER_WIDTH + CELL_GAP;
+  const monthTextY = cardY + CARD_PADDING_TOP + 12;
+  const gridOffsetY = cardY + CARD_PADDING_TOP + CARD_HEADER_HEIGHT;
+  const footerBaselineY = gridOffsetY + gridHeight + FOOTER_TOP_GAP;
+  const cardWidth = CARD_PADDING_X + LABEL_GUTTER_WIDTH + CELL_GAP + gridWidth + CARD_PADDING_X;
+  const cardHeight =
+    CARD_PADDING_TOP + CARD_HEADER_HEIGHT + gridHeight + FOOTER_TOP_GAP + FOOTER_HEIGHT + CARD_PADDING_BOTTOM;
 
-  const width = marginLeft + contentWidth + marginRight;
-  const height = marginTop + contentHeight + marginBottom;
+  const width = outerMarginX * 2 + cardWidth;
+  const height = cardY + cardHeight + outerMarginY;
 
   const weekdayLabels = [
     { text: "Mon", day: 1 },
@@ -233,16 +244,20 @@ export function renderContributionGraph(options: RenderOptions): string {
   const monthText = monthLabels
     .map(
       (label) =>
-        `<text class="month" x="${gridOffsetX + label.x}" y="${SUMMARY_ROW_HEIGHT + 10}" fill="${themeStyle.labelColor}" font-size="12" font-family="${LABEL_FONT}">${label.text}</text>`
+        `<text class="month" x="${gridOffsetX + label.x}" y="${monthTextY}" fill="${themeStyle.axisColor}" font-size="12" font-family="${LABEL_FONT}">${label.text}</text>`
     )
     .join("");
 
-  const summary = `<text class="summary" x="0" y="16" fill="${themeStyle.labelColor}" font-size="18" font-family="${LABEL_FONT}">${escapeXml(summaryText)}</text>`;
+  const summary = `<text class="summary" x="${outerMarginX}" y="${outerMarginY + 20}" fill="${themeStyle.summaryColor}" font-size="18" font-family="${LABEL_FONT}">${escapeXml(summaryText)}</text>`;
+  const settingsTextX = cardX + cardWidth - 24;
+  const settingsY = outerMarginY + 21;
+  const settings = `<text class="settings" x="${settingsTextX}" y="${settingsY}" text-anchor="end" fill="${themeStyle.mutedColor}" font-size="10" font-family="${LABEL_FONT}">Contribution settings</text><path class="settings-caret" d="M0 0h7l-3.5 4z" fill="${themeStyle.mutedColor}" transform="translate(${settingsTextX + 8},${settingsY - 7})"/>`;
+  const card = `<rect class="card" x="${cardX + 0.5}" y="${cardY + 0.5}" width="${cardWidth - 1}" height="${cardHeight - 1}" rx="6" ry="6" fill="none" stroke="${themeStyle.cardBorder}"/>`;
 
   const weekdayText = weekdayLabels
     .map(({ text, day }) => {
       const y = gridOffsetY + day * pitch + 8;
-      return `<text class="wday" x="0" y="${y}" fill="${themeStyle.labelColor}" font-size="12" font-family="${LABEL_FONT}">${text}</text>`;
+      return `<text class="wday" x="${cardX + CARD_PADDING_X}" y="${y}" fill="${themeStyle.axisColor}" font-size="12" font-family="${LABEL_FONT}">${text}</text>`;
     })
     .join("");
 
@@ -255,5 +270,19 @@ export function renderContributionGraph(options: RenderOptions): string {
     })
     .join("");
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="git-big-title"><title id="git-big-title">${escapeXml(title)}</title><desc>Daily workout intensity rendered like a GitHub contribution graph.</desc><g transform="translate(${marginLeft},${marginTop})"><g>${summary}</g><g>${monthText}</g><g>${weekdayText}</g><g>${rects}</g></g></svg>\n`;
+  const legendCellGap = 5;
+  const legendCellWidth = CELL_SIZE;
+  const legendWidth = 5 * legendCellWidth + 4 * legendCellGap;
+  const moreTextX = cardX + cardWidth - CARD_PADDING_X;
+  const legendStartX = moreTextX - 30 - legendWidth;
+  const lessTextX = legendStartX - 8;
+  const legendY = footerBaselineY - 8;
+  const legendSwatches = Array.from({ length: 5 }, (_, index) => {
+    const fill = palette[index] ?? palette[0];
+    const x = legendStartX + index * (legendCellWidth + legendCellGap);
+    return `<rect class="legend-swatch" x="${x}" y="${legendY}" width="${legendCellWidth}" height="${legendCellWidth}" rx="${CELL_RADIUS}" ry="${CELL_RADIUS}" fill="${fill}"/>`;
+  }).join("");
+  const footer = `<text class="help-link" x="${gridOffsetX}" y="${footerBaselineY}" fill="${themeStyle.mutedColor}" font-size="11" font-family="${LABEL_FONT}">Learn how we count contributions</text><text class="legend-less" x="${lessTextX}" y="${footerBaselineY}" text-anchor="end" fill="${themeStyle.mutedColor}" font-size="11" font-family="${LABEL_FONT}">Less</text>${legendSwatches}<text class="legend-more" x="${moreTextX}" y="${footerBaselineY}" text-anchor="end" fill="${themeStyle.mutedColor}" font-size="11" font-family="${LABEL_FONT}">More</text>`;
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="git-big-title"><title id="git-big-title">${escapeXml(title)}</title><desc>Daily workout intensity rendered like a GitHub contribution graph.</desc>${summary}${settings}${card}${monthText}${weekdayText}<g>${rects}</g>${footer}</svg>\n`;
 }

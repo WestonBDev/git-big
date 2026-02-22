@@ -42,13 +42,13 @@ describe("render", () => {
     }
   });
 
-  it("retains both feb and mar labels at year boundary", () => {
+  it("skips cramped leading month labels at year boundary", () => {
     const cells = buildContributionGrid({}, new Date("2026-02-22T00:00:00Z"));
     const labels = buildMonthLabels(cells);
     const monthTexts = labels.map((label) => label.text);
 
-    expect(monthTexts[0]).toBe("Feb");
-    expect(monthTexts[1]).toBe("Mar");
+    expect(monthTexts[0]).toBe("Mar");
+    expect(monthTexts[1]).toBe("Apr");
   });
 
   it("renders full trailing week through saturday", () => {
@@ -94,8 +94,26 @@ describe("render", () => {
       endDate
     });
 
-    expect(svg).toContain('<text class="wday" x="0"');
-    expect(svg).not.toContain('<text class="wday" x="-14"');
+    const weekdayMatches = [...svg.matchAll(/<text class="wday" x="([^"]+)"/g)];
+
+    expect(weekdayMatches.length).toBe(3);
+    for (const match of weekdayMatches) {
+      expect(Number(match[1])).toBeGreaterThanOrEqual(0);
+    }
+  });
+
+  it("renders github-style card chrome and footer legend", () => {
+    const svg = renderContributionGraph({
+      levelsByDate: {},
+      endDate
+    });
+
+    expect(svg).toContain('class="card"');
+    expect(svg).toContain("Contribution settings");
+    expect(svg).toContain('class="help-link"');
+    expect(svg).toContain('class="legend-less"');
+    expect(svg).toContain('class="legend-more"');
+    expect(svg.match(/class="legend-swatch"/g)?.length).toBe(5);
   });
 
   it("renders light theme styles for github light mode", () => {
