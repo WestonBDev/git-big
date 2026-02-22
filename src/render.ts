@@ -107,6 +107,12 @@ function yearlySummaryText(
   minutesByDate: Record<string, number> | undefined,
   sessionCount: number | undefined
 ): string {
+  if (typeof sessionCount === "number" && Number.isFinite(sessionCount) && sessionCount >= 0) {
+    const normalizedSessions = Math.floor(sessionCount);
+    const sessionWord = normalizedSessions === 1 ? "workout" : "workouts";
+    return `${NUMBER_FORMATTER.format(normalizedSessions)} ${sessionWord} in the last year`;
+  }
+
   const totalMinutes = Object.values(minutesByDate ?? {}).reduce((sum, value) => {
     if (!Number.isFinite(value) || value <= 0) {
       return sum;
@@ -116,12 +122,6 @@ function yearlySummaryText(
   }, 0);
   const formattedMinutes = NUMBER_FORMATTER.format(totalMinutes);
   const minuteWord = totalMinutes === 1 ? "minute" : "minutes";
-
-  if (typeof sessionCount === "number" && Number.isFinite(sessionCount) && sessionCount >= 0) {
-    const normalizedSessions = Math.floor(sessionCount);
-    const sessionWord = normalizedSessions === 1 ? "workout" : "workouts";
-    return `${NUMBER_FORMATTER.format(normalizedSessions)} ${sessionWord} · ${formattedMinutes} active ${minuteWord} in the last year`;
-  }
 
   return `${formattedMinutes} active ${minuteWord} in the last year`;
 }

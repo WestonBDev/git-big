@@ -157,7 +157,20 @@ describe("render", () => {
       endDate
     });
 
-    expect(svg).toContain("34 workouts");
-    expect(svg).toContain("1,250 active minutes in the last year");
+    expect(svg).toContain("34 workouts in the last year");
+    expect(svg).not.toContain("active minutes in the last year");
+  });
+
+  it("uses singular workout noun when session count is one", () => {
+    const svg = renderContributionGraph({
+      levelsByDate: {},
+      minutesByDate: {
+        "2026-02-18": 75
+      },
+      sessionCount: 1,
+      endDate
+    });
+
+    expect(svg).toContain("1 workout in the last year");
   });
 });
