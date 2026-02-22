@@ -36,13 +36,19 @@ async function runGenerate(env: NodeJS.ProcessEnv): Promise<void> {
 
 async function validateArtifacts(cwd: string): Promise<{ totalDays: number; activeDays: number }> {
   const svgPath = resolve(cwd, "dist", "fithub.svg");
+  const darkSvgPath = resolve(cwd, "dist", "fithub-dark.svg");
+  const lightSvgPath = resolve(cwd, "dist", "fithub-light.svg");
   const levelsPath = resolve(cwd, "dist", "fithub-levels.json");
 
   await access(svgPath, constants.F_OK);
+  await access(darkSvgPath, constants.F_OK);
+  await access(lightSvgPath, constants.F_OK);
   await access(levelsPath, constants.F_OK);
 
-  const [svg, levelsRaw] = await Promise.all([
+  const [svg, darkSvg, lightSvg, levelsRaw] = await Promise.all([
     readFile(svgPath, "utf8"),
+    readFile(darkSvgPath, "utf8"),
+    readFile(lightSvgPath, "utf8"),
     readFile(levelsPath, "utf8")
   ]);
 
@@ -50,8 +56,24 @@ async function validateArtifacts(cwd: string): Promise<{ totalDays: number; acti
     throw new Error("dist/fithub.svg is not a valid SVG root.");
   }
 
+  if (!darkSvg.startsWith("<svg")) {
+    throw new Error("dist/fithub-dark.svg is not a valid SVG root.");
+  }
+
+  if (!lightSvg.startsWith("<svg")) {
+    throw new Error("dist/fithub-light.svg is not a valid SVG root.");
+  }
+
   if (!svg.includes("data-date=")) {
     throw new Error("dist/fithub.svg does not contain day cells.");
+  }
+
+  if (!darkSvg.includes('fill="#0d1117"')) {
+    throw new Error("dist/fithub-dark.svg is missing the dark theme background.");
+  }
+
+  if (!lightSvg.includes('fill="#ffffff"')) {
+    throw new Error("dist/fithub-light.svg is missing the light theme background.");
   }
 
   const parsedLevels = JSON.parse(levelsRaw) as Record<string, number>;

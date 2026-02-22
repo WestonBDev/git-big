@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  buildThemeAwareWidgetMarkdown,
   buildStravaAuthorizeUrl,
   isAffirmative,
   normalizeThresholdInput,
@@ -50,5 +51,12 @@ describe("setup helpers", () => {
     expect(isAffirmative("", true)).toBe(true);
     expect(isAffirmative("", false)).toBe(false);
     expect(isAffirmative("n", true)).toBe(false);
+  });
+
+  it("builds theme-aware profile widget markdown", () => {
+    const snippet = buildThemeAwareWidgetMarkdown("WestonBDev/git-big");
+
+    expect(snippet).toContain("fithub-light.svg#gh-light-mode-only");
+    expect(snippet).toContain("fithub-dark.svg#gh-dark-mode-only");
   });
 });

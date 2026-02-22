@@ -1,25 +1,29 @@
 # FitHub Graph
 
-GitHub-native fitness contribution graph powered by Strava activity minutes.
+A fitness contribution graph for your GitHub profile. Green is code. Red is discipline.
 
-- Green graph: code
-- Red graph: discipline
+Make this:
 
-## Preview
+<img src="./assets/fithub-preview.svg" alt="FitHub Graph" />
 
-![FitHub preview](./assets/fithub-preview.svg)
+with this:
 
-## 2-Minute Setup
-
-1. Fork this repo (or use it as a template).
-2. Create a Strava API app at [https://www.strava.com/settings/api](https://www.strava.com/settings/api).
-Set the Strava app callback domain to `localhost`.
-3. Install GitHub CLI and authenticate:
-
-```bash
-gh auth login
+```markdown
+![Fitness Graph](https://raw.githubusercontent.com/WestonBDev/git-big/main/dist/fithub-light.svg#gh-light-mode-only)
+![Fitness Graph](https://raw.githubusercontent.com/WestonBDev/git-big/main/dist/fithub-dark.svg#gh-dark-mode-only)
 ```
 
+## Why
+
+GitHub's contribution graph is one of the best data visualizations out there -- a year of work at a glance. FitHub does the same thing for your workouts. It pulls your Strava activity data daily, maps minutes to intensity levels, and renders a red contribution graph SVG that lives right next to your green one.
+
+A GitHub Actions cron runs every day, refreshes your Strava token, and commits the updated graph. Your profile README stays current without you lifting a finger (except at the gym).
+
+## Setup
+
+1. Fork this repo (or use it as a template)
+2. Create a Strava API app at [strava.com/settings/api](https://www.strava.com/settings/api) -- set the callback domain to `localhost`
+3. Make sure [GitHub CLI](https://cli.github.com/) is installed and authenticated (`gh auth login`)
 4. Run the guided setup:
 
 ```bash
@@ -27,50 +31,34 @@ npm install
 npm run setup
 ```
 
-The wizard will:
-- guide OAuth and capture your Strava refresh token
-- set GitHub repo secrets (`STRAVA_CLIENT_ID`, `STRAVA_CLIENT_SECRET`, `STRAVA_REFRESH_TOKEN`)
-- optionally set `REPO_ADMIN_TOKEN` for automatic token rotation
-- optionally set `FITHUB_THRESHOLDS`
-- optionally trigger the update workflow
+The wizard handles OAuth, sets your repo secrets, and optionally kicks off the first graph update. That's it.
 
-5. Embed in your profile README:
+5. Add the image to your profile README:
 
 ```markdown
-![Fitness Graph](./dist/fithub.svg)
+![Fitness Graph](https://raw.githubusercontent.com/<your-username>/git-big/main/dist/fithub-light.svg#gh-light-mode-only)
+![Fitness Graph](https://raw.githubusercontent.com/<your-username>/git-big/main/dist/fithub-dark.svg#gh-dark-mode-only)
 ```
 
-## Architecture
+## Custom Thresholds
 
-```mermaid
-flowchart TD
-  A["GitHub Actions (daily cron)"] --> B["Refresh Strava token"]
-  B --> C["Fetch last 365 days"]
-  C --> D["Aggregate minutes per date"]
-  D --> E["Normalize to 5 red intensity levels"]
-  E --> F["Render GitHub-style SVG"]
-  F --> G["Commit dist artifacts"]
-```
+By default, daily workout minutes map to intensity levels like this:
 
-## Repository Layout
+| Level | Minutes |
+|-------|---------|
+| 0     | 0       |
+| 1     | 1--19   |
+| 2     | 20--39  |
+| 3     | 40--59  |
+| 4     | 60+     |
 
-```text
-src/
-  fetch.ts
-  normalize.ts
-  render.ts
-tests/
-  fetch.test.ts
-  normalize.test.ts
-  render.test.ts
-dist/
-.github/workflows/
-README.md
-CONTRIBUTING.md
-LICENSE
-```
+You can customize these by setting the `FITHUB_THRESHOLDS` repo variable to four comma-separated ascending integers. For example, `1,30,60,90` would shift the scale for heavier training.
 
-## Local Development
+## Contributing
+
+If you see anything that can be improved, send in an issue or PR.
+
+To get the code up and running locally:
 
 ```bash
 npm install
@@ -79,36 +67,11 @@ npm run typecheck
 npm test
 ```
 
-Guided setup wizard:
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for the full workflow.
 
-```bash
-npm run setup
-```
+## See Also
 
-Generate artifacts locally (requires Strava env vars):
-
-```bash
-npm run generate
-```
-
-Output files:
-- `dist/fithub.svg`
-- `dist/fithub-levels.json`
-
-## Profile Widget
-
-Use this image in your profile README (`WestonBDev/WestonBDev`):
-
-```markdown
-![Fitness Graph](https://raw.githubusercontent.com/WestonBDev/git-big/main/dist/fithub.svg)
-```
-
-## Roadmap
-
-- V0.2: configurable metrics (distance/calories/steps) and light theme
-- V0.3: multi-provider abstraction and adapters
-- V0.4: hosted SaaS + dual overlay mode (code vs fitness)
-
-## License
-
-MIT
+- [The GitHub repo](https://github.com/WestonBDev/git-big)
+- [Strava API docs](https://developers.strava.com/)
+- [SECURITY.md](./.github/SECURITY.md) -- how to report vulnerabilities
+- [LICENSE](./LICENSE) -- MIT

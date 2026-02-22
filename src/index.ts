@@ -64,8 +64,12 @@ export function parseThresholds(configured: string | undefined): Thresholds {
 
 async function generateGraph(
   credentials: StravaCredentials,
-  svgPath: string,
-  levelsPath: string
+  outputPaths: {
+    legacySvgPath: string;
+    darkSvgPath: string;
+    lightSvgPath: string;
+    levelsPath: string;
+  }
 ): Promise<void> {
   const endDate = parseEndDate(process.env.FITHUB_END_DATE);
   const thresholds = parseThresholds(process.env.FITHUB_THRESHOLDS);
@@ -81,15 +85,27 @@ async function generateGraph(
   const filledMinutesByDate = fillDateRange(minutesByDate, renderStart, endDate);
   const filledLevelsByDate = fillDateRange(levelsByDate, renderStart, endDate);
 
-  const svg = renderContributionGraph({
+  const darkSvg = renderContributionGraph({
     levelsByDate: filledLevelsByDate,
     minutesByDate: filledMinutesByDate,
-    endDate
+    endDate,
+    theme: "dark"
   });
 
-  await mkdir(dirname(svgPath), { recursive: true });
-  await writeFile(svgPath, svg, "utf8");
-  await writeFile(levelsPath, `${JSON.stringify(lastYearLevelsByDate, null, 2)}\n`, "utf8");
+  const lightSvg = renderContributionGraph({
+    levelsByDate: filledLevelsByDate,
+    minutesByDate: filledMinutesByDate,
+    endDate,
+    theme: "light"
+  });
+
+  await mkdir(dirname(outputPaths.legacySvgPath), { recursive: true });
+  await Promise.all([
+    writeFile(outputPaths.legacySvgPath, darkSvg, "utf8"),
+    writeFile(outputPaths.darkSvgPath, darkSvg, "utf8"),
+    writeFile(outputPaths.lightSvgPath, lightSvg, "utf8"),
+    writeFile(outputPaths.levelsPath, `${JSON.stringify(lastYearLevelsByDate, null, 2)}\n`, "utf8")
+  ]);
 
   if (refreshTokenOutputPath) {
     await mkdir(dirname(refreshTokenOutputPath), { recursive: true });
@@ -105,10 +121,19 @@ async function main(): Promise<void> {
   };
 
   const svgPath = resolve(process.cwd(), "dist", "fithub.svg");
+  const darkSvgPath = resolve(process.cwd(), "dist", "fithub-dark.svg");
+  const lightSvgPath = resolve(process.cwd(), "dist", "fithub-light.svg");
   const levelsPath = resolve(process.cwd(), "dist", "fithub-levels.json");
 
-  await generateGraph(credentials, svgPath, levelsPath);
+  await generateGraph(credentials, {
+    legacySvgPath: svgPath,
+    darkSvgPath,
+    lightSvgPath,
+    levelsPath
+  });
   process.stdout.write(`Generated ${svgPath}\n`);
+  process.stdout.write(`Generated ${darkSvgPath}\n`);
+  process.stdout.write(`Generated ${lightSvgPath}\n`);
   process.stdout.write(`Generated ${levelsPath}\n`);
 }
 

@@ -4,7 +4,7 @@ import { createInterface } from "node:readline/promises";
 import { extractAuthCode } from "../src/oauth.js";
 import {
   buildStravaAuthorizeUrl,
-  buildWidgetMarkdown,
+  buildThemeAwareWidgetMarkdown,
   isAffirmative,
   normalizeThresholdInput,
   parseRepoSlug,
@@ -181,7 +181,7 @@ async function main(): Promise<void> {
     }
 
     process.stdout.write("\nProfile README snippet:\n\n");
-    process.stdout.write(`${buildWidgetMarkdown(repo)}\n`);
+    process.stdout.write(`${buildThemeAwareWidgetMarkdown(repo)}\n`);
     process.stdout.write("\nSetup complete.\n");
   } finally {
     rl.close();

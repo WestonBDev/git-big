@@ -59,10 +59,10 @@ jobs:
 
       - name: Commit graph artifacts
         run: |
-          if [[ -n "$(git status --porcelain dist/fithub.svg dist/fithub-levels.json)" ]]; then
+          if [[ -n "$(git status --porcelain dist/fithub.svg dist/fithub-dark.svg dist/fithub-light.svg dist/fithub-levels.json)" ]]; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add dist/fithub.svg dist/fithub-levels.json
+            git add dist/fithub.svg dist/fithub-dark.svg dist/fithub-light.svg dist/fithub-levels.json
             git commit -m "chore: update FitHub graph"
             git push
           else

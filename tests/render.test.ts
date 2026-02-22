@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  LIGHT_RED_PALETTE,
   RED_PALETTE,
   buildContributionGrid,
   buildMonthLabels,
@@ -76,5 +77,24 @@ describe("render", () => {
 
     expect(svg).toContain('<text class="wday" x="0"');
     expect(svg).not.toContain('<text class="wday" x="-14"');
+  });
+
+  it("renders light theme styles for github light mode", () => {
+    const svg = renderContributionGraph({
+      levelsByDate: {
+        "2026-02-18": 4
+      },
+      endDate,
+      theme: "light",
+      palette: LIGHT_RED_PALETTE
+    });
+
+    expect(svg).toContain('fill="#ffffff"');
+    expect(svg).toContain('fill="#57606a"');
+
+    const intenseDayMatch = svg.match(
+      /<rect[^>]*data-date="2026-02-18"[^>]*fill="([^"]+)"/
+    );
+    expect(intenseDayMatch?.[1]).toBe("#cf222e");
   });
 });

@@ -1,15 +1,29 @@
 import { addDaysUtc, formatDateUtc, listDateRange, parseIsoDate, startOfUtcDay, startOfWeekSunday } from "./date.js";
 
 export const RED_PALETTE = ["#161b22", "#3d0f0f", "#6b1a1a", "#a12c2c", "#d64545"] as const;
+export const LIGHT_RED_PALETTE = ["#ebedf0", "#ffebe9", "#ffcecb", "#ffaba8", "#cf222e"] as const;
+export type GraphTheme = "dark" | "light";
 
 const CELL_SIZE = 10;
 const CELL_GAP = 3;
 const CELL_RADIUS = 2;
 const LABEL_GUTTER_WIDTH = 28;
 const HEADER_ROW_HEIGHT = 13;
-const LABEL_COLOR = "#7d8590";
 const LABEL_FONT =
   "-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif";
+
+const THEME_STYLE = {
+  dark: {
+    backgroundColor: "#0d1117",
+    labelColor: "#7d8590",
+    palette: RED_PALETTE
+  },
+  light: {
+    backgroundColor: "#ffffff",
+    labelColor: "#57606a",
+    palette: LIGHT_RED_PALETTE
+  }
+} as const;
 
 const MONTH_FORMATTER = new Intl.DateTimeFormat("en-US", {
   month: "short",
@@ -36,6 +50,7 @@ export interface RenderOptions {
   levelsByDate: Record<string, number>;
   minutesByDate?: Record<string, number>;
   endDate?: Date;
+  theme?: GraphTheme;
   palette?: readonly [string, string, string, string, string];
   title?: string;
 }
@@ -142,7 +157,9 @@ export function buildMonthLabels(cells: ReadonlyArray<ContributionCell>): MonthL
 
 export function renderContributionGraph(options: RenderOptions): string {
   const endDate = options.endDate ?? new Date();
-  const palette = options.palette ?? RED_PALETTE;
+  const theme = options.theme ?? "dark";
+  const themeStyle = THEME_STYLE[theme];
+  const palette = options.palette ?? themeStyle.palette;
   const title = options.title ?? "Fitness contributions";
 
   const cells = buildContributionGrid(options.levelsByDate, endDate);
@@ -174,14 +191,14 @@ export function renderContributionGraph(options: RenderOptions): string {
   const monthText = monthLabels
     .map(
       (label) =>
-        `<text class="month" x="${gridOffsetX + label.x}" y="10" fill="${LABEL_COLOR}" font-size="12" font-family="${LABEL_FONT}">${label.text}</text>`
+        `<text class="month" x="${gridOffsetX + label.x}" y="10" fill="${themeStyle.labelColor}" font-size="12" font-family="${LABEL_FONT}">${label.text}</text>`
     )
     .join("");
 
   const weekdayText = weekdayLabels
     .map(({ text, day }) => {
       const y = gridOffsetY + day * pitch + 8;
-      return `<text class="wday" x="0" y="${y}" fill="${LABEL_COLOR}" font-size="12" font-family="${LABEL_FONT}">${text}</text>`;
+      return `<text class="wday" x="0" y="${y}" fill="${themeStyle.labelColor}" font-size="12" font-family="${LABEL_FONT}">${text}</text>`;
     })
     .join("");
 
@@ -194,5 +211,5 @@ export function renderContributionGraph(options: RenderOptions): string {
     })
     .join("");
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="fithub-title"><title id="fithub-title">${escapeXml(title)}</title><desc>Daily workout intensity rendered like a GitHub contribution graph.</desc><rect width="100%" height="100%" fill="#0d1117"/><g transform="translate(${marginLeft},${marginTop})"><g>${monthText}</g><g>${weekdayText}</g><g>${rects}</g></g></svg>\n`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="fithub-title"><title id="fithub-title">${escapeXml(title)}</title><desc>Daily workout intensity rendered like a GitHub contribution graph.</desc><rect width="100%" height="100%" fill="${themeStyle.backgroundColor}"/><g transform="translate(${marginLeft},${marginTop})"><g>${monthText}</g><g>${weekdayText}</g><g>${rects}</g></g></svg>\n`;
 }
