@@ -25,7 +25,7 @@ describe("api /strava/connect", () => {
     process.env = {
       ...originalEnv,
       STRAVA_CLIENT_ID: "204011",
-      FITHUB_STATE_SECRET: "state-secret"
+      GITBIG_STATE_SECRET: "state-secret"
     };
 
     const req = createMockRequest({
@@ -44,7 +44,7 @@ describe("api /strava/connect", () => {
     process.env = {
       ...originalEnv,
       STRAVA_CLIENT_ID: "204011",
-      FITHUB_STATE_SECRET: "state-secret"
+      GITBIG_STATE_SECRET: "state-secret"
     };
 
     const req = createMockRequest({
@@ -87,7 +87,7 @@ describe("api /strava/connect", () => {
     process.env = {
       ...originalEnv,
       STRAVA_CLIENT_ID: "204011",
-      FITHUB_STATE_SECRET: "state-secret"
+      GITBIG_STATE_SECRET: "state-secret"
     };
 
     const req = createMockRequest({
@@ -115,7 +115,7 @@ describe("api /strava/connect", () => {
     process.env = {
       ...originalEnv,
       STRAVA_CLIENT_ID: "",
-      FITHUB_STATE_SECRET: "state-secret"
+      GITBIG_STATE_SECRET: "state-secret"
     };
 
     const req = createMockRequest({

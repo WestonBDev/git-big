@@ -2,7 +2,13 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 
 import { decryptTokenSecret, encryptTokenSecret } from "../../src/hosted/crypto.js";
 import { normalizeGithubLogin } from "../../src/hosted/github.js";
-import { escapeHtml, getSingleQueryParam, publicBaseUrl, requiredEnv } from "../../src/hosted/http.js";
+import {
+  escapeHtml,
+  getSingleQueryParam,
+  publicBaseUrl,
+  requiredEnv,
+  requiredEnvAny
+} from "../../src/hosted/http.js";
 import { verifyOAuthStateToken } from "../../src/hosted/state.js";
 import { createHostedStore } from "../../src/hosted/store.js";
 import { buildHostedWidgetMarkdown } from "../../src/setup.js";
@@ -22,7 +28,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       return;
     }
 
-    const state = verifyOAuthStateToken(stateToken, requiredEnv("FITHUB_STATE_SECRET"));
+    const state = verifyOAuthStateToken(
+      stateToken,
+      requiredEnvAny(["GITBIG_STATE_SECRET", "FITHUB_STATE_SECRET"])
+    );
     const githubLogin = normalizeGithubLogin(state.githubLogin);
 
     const tokenResponse = await exchangeAuthorizationCode({
@@ -31,7 +40,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       code
     });
 
-    const tokenEncryptionKey = requiredEnv("FITHUB_TOKEN_ENCRYPTION_KEY");
+    const tokenEncryptionKey = requiredEnvAny([
+      "GITBIG_TOKEN_ENCRYPTION_KEY",
+      "FITHUB_TOKEN_ENCRYPTION_KEY"
+    ]);
     const encryptedRefreshToken = encryptTokenSecret(tokenResponse.refreshToken, tokenEncryptionKey);
     const store = createHostedStore();
 
@@ -55,7 +67,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>FitHub Connected</title>
+  <title>git big connected</title>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif; margin: 24px; color: #24292f; }
     code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
@@ -64,7 +76,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   </style>
 </head>
 <body>
-  <h1>FitHub connected for ${escapedLogin}</h1>
+  <h1><code>git big</code> connected for ${escapedLogin}</h1>
   <p>Paste this in your GitHub profile README:</p>
   <pre>${escapedSnippet}</pre>
   <p>Reconnect URL: <a href="${escapedConnectUrl}">${escapedConnectUrl}</a></p>

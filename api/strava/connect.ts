@@ -1,7 +1,12 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
 import { normalizeGithubLogin } from "../../src/hosted/github.js";
-import { getSingleQueryParam, publicBaseUrl, requiredEnv } from "../../src/hosted/http.js";
+import {
+  getSingleQueryParam,
+  publicBaseUrl,
+  requiredEnv,
+  requiredEnvAny
+} from "../../src/hosted/http.js";
 import { createOAuthStateToken } from "../../src/hosted/state.js";
 import { buildStravaAuthorizeUrl } from "../../src/setup.js";
 
@@ -28,7 +33,7 @@ export default function handler(req: VercelRequest, res: VercelResponse): void {
         githubLogin,
         redirectPath: redirectPath?.startsWith("/") ? redirectPath : undefined
       },
-      requiredEnv("FITHUB_STATE_SECRET")
+      requiredEnvAny(["GITBIG_STATE_SECRET", "FITHUB_STATE_SECRET"])
     );
 
     const authorizeUrl = new URL(

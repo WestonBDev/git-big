@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping improve FitHub Graph.
+Thanks for helping improve `git big`.
 
 ## Development workflow
 
@@ -24,5 +24,5 @@ Thanks for helping improve FitHub Graph.
 
 - [ ] Tests cover the new behavior
 - [ ] Lint/typecheck/build pass locally
-- [ ] `dist/fithub.svg` and `dist/fithub-levels.json` are only changed when intended
+- [ ] `dist/git-big.svg` and `dist/git-big-levels.json` are only changed when intended
 - [ ] README/docs updated for user-facing changes

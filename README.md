@@ -1,91 +1,135 @@
-# FitHub Graph
+# `git big`
 
-A fitness contribution graph for your GitHub profile.
+GitHub-style fitness contribution graph for your GitHub profile, powered by Strava.
 
-Makes this:
+<img src="./assets/fithub-preview.svg" alt="git big graph preview" />
 
-<img src="./assets/fithub-preview.svg" alt="FitHub Graph" />
+## Quick Start (Lowest Friction)
 
-with this:
+Use this if someone is already hosting `git big` on Vercel.
 
-```markdown
-![Fitness Graph](https://raw.githubusercontent.com/WestonBDev/git-big/main/dist/fithub-light.svg#gh-light-mode-only)
-![Fitness Graph](https://raw.githubusercontent.com/WestonBDev/git-big/main/dist/fithub-dark.svg#gh-dark-mode-only)
+1. Open this URL in your browser:
+
+```text
+https://<your-git-big-domain>/api/strava/connect?github=<YourGitHubUsername>
 ```
 
-## Setup
+2. Authorize Strava.
+3. Copy the generated markdown snippet shown on the callback page.
+4. Paste it into your GitHub profile README (`<username>/<username>` repo).
 
-1. Fork this repo (or use it as a template)
-2. Create a Strava API app at [strava.com/settings/api](https://www.strava.com/settings/api) -- set the callback domain to `localhost`
-3. Make sure [GitHub CLI](https://cli.github.com/) is installed and authenticated (`gh auth login`)
-4. Run the guided setup:
+That is all. Daily refresh runs automatically.
+
+## Self-Host in Your Repo (5 Minutes)
+
+Use this if you want full control of your Strava app/secrets.
+
+1. Fork this repo (or use it as a template).
+2. Create a Strava API app at [strava.com/settings/api](https://www.strava.com/settings/api).
+3. Set Strava callback domain to `localhost` for local setup.
+4. Install [GitHub CLI](https://cli.github.com/) and authenticate:
+
+```bash
+gh auth login
+```
+
+5. Run the guided setup wizard:
 
 ```bash
 npm install
 npm run setup
 ```
 
-The wizard handles OAuth, sets your repo secrets, and optionally kicks off the first graph update. That's it.
+The wizard handles OAuth, stores secrets in your repo, and can trigger the first graph run.
 
-5. Add the image to your profile README:
+6. Add this to your profile README:
 
 ```markdown
-![Fitness Graph](https://raw.githubusercontent.com/<your-username>/git-big/main/dist/fithub-light.svg#gh-light-mode-only)
-![Fitness Graph](https://raw.githubusercontent.com/<your-username>/git-big/main/dist/fithub-dark.svg#gh-dark-mode-only)
+![Fitness Graph](https://raw.githubusercontent.com/<your-username>/git-big/main/dist/git-big-light.svg#gh-light-mode-only)
+![Fitness Graph](https://raw.githubusercontent.com/<your-username>/git-big/main/dist/git-big-dark.svg#gh-dark-mode-only)
 ```
 
-## Importing Historical Data
+## Hosted Mode (For Operators)
 
-FitHub reads from Strava, so your workout history needs to live there. If you've been tracking with another app, here's how to get that data in.
+If you want to host one shared instance for many users:
 
-**Garmin / Wahoo / other device apps** -- Connect directly at [strava.com/settings/apps](https://www.strava.com/settings/apps). Most integrations will backfill at least a portion of your history automatically.
+1. Deploy to Vercel.
+2. Add Upstash Redis.
+3. Configure `GITBIG_*` environment variables.
+4. Set Strava callback domain to your deployed domain.
 
-**Apple Health** -- The Apple Health integration only syncs new activities going forward. This repo includes a built-in converter for older workouts:
+Full guide: [docs/HOSTED_VERCEL.md](./docs/HOSTED_VERCEL.md)
 
-1. Open the Health app on your iPhone
-2. Tap your profile picture, then **Export All Health Data**
-3. Unzip the export on your computer
-4. Run the converter:
+## Output Files
+
+`npm run generate` writes:
+
+- `dist/git-big.svg`
+- `dist/git-big-dark.svg`
+- `dist/git-big-light.svg`
+- `dist/git-big-levels.json`
+
+Legacy `fithub*` files are still written for backward compatibility.
+
+## Import Historical Data
+
+`git big` reads Strava activity data. If older workouts are missing from Strava, they will not appear in the graph.
+
+### Garmin / Wahoo / Other Device Apps
+
+Connect directly in Strava at [strava.com/settings/apps](https://www.strava.com/settings/apps). Some integrations backfill older data automatically.
+
+### Apple Health
+
+Apple Health integration usually syncs new activities only. For older workouts:
+
+1. Export Apple Health XML from iPhone (`Health` -> profile -> `Export All Health Data`).
+2. Unzip the export on your computer.
+3. Convert with:
 
 ```bash
 npx tsx scripts/apple-health-to-tcx.ts ~/Downloads/apple_health_export/export.xml
 ```
 
-This parses your workouts, skips any that already have GPS route files, and writes TCX files to a `strava-upload-tcx/` folder next to the export. No health data is copied into the repo.
+4. Upload generated TCX files at [strava.com/upload/select](https://www.strava.com/upload/select) (up to 25 at a time).
+5. Upload GPX files from `workout-routes/` for route-based workouts.
 
-5. Upload the generated TCX files to [strava.com/upload/select](https://www.strava.com/upload/select) (25 at a time)
-6. Upload the GPX files from `workout-routes/` for activities with GPS data
+### Other Platforms
 
-**Other platforms** -- If you can export your data as `.fit`, `.tcx`, or `.gpx` files, upload them directly at [strava.com/upload/select](https://www.strava.com/upload/select). For 100+ files, contact [Strava Support](https://support.strava.com) for bulk import help.
+If you can export `.fit`, `.tcx`, or `.gpx`, upload directly to Strava at [strava.com/upload/select](https://www.strava.com/upload/select).
 
-Once your history is in Strava, re-run `npm run generate` or trigger the workflow from the Actions tab and the full year will fill in.
+## Troubleshooting
 
-## Relative Intensity Scaling
+### "I should have more active days"
 
-FitHub uses GitHub-style relative intensity levels instead of fixed minute cutoffs.
+`git big` renders only the last 365 days, like GitHub contributions. If Strava does not return older activities in that window yet, the graph will look sparse until Strava finishes processing/importing.
 
-- Level `0` is always no activity.
-- Levels `1` through `4` are derived from your own rolling yearly distribution.
-- Outlier days are handled using the same quartile/outlier approach used by `githubchart` and `githubstats`.
+### "OAuth succeeded but graph is empty"
 
-## Contributing
+Verify:
 
-If you see anything that can be improved, send in an issue or PR.
+- GitHub username in connect URL is correct.
+- README image URL uses your correct username/repo/branch.
+- Strava authorization used `activity:read_all`.
 
-To get the code up and running locally:
+### "Refresh token changed"
+
+Strava rotates refresh tokens. Update `STRAVA_REFRESH_TOKEN` secret after re-authorization.
+
+## Development
 
 ```bash
 npm install
 npm run lint
 npm run typecheck
 npm test
+npm run build
 ```
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for the full workflow.
+## Links
 
-## See Also
-
-- [The GitHub repo](https://github.com/WestonBDev/git-big)
+- [GitHub repo](https://github.com/WestonBDev/git-big)
 - [Strava API docs](https://developers.strava.com/)
-- [SECURITY.md](./.github/SECURITY.md) -- how to report vulnerabilities
-- [LICENSE](./LICENSE) -- MIT
+- [Contributing guide](./CONTRIBUTING.md)
+- [Security policy](./.github/SECURITY.md)
+- [MIT License](./LICENSE)

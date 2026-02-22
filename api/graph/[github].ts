@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 
 import { startOfUtcDay } from "../../src/date.js";
 import { normalizeGithubLogin } from "../../src/hosted/github.js";
-import { getSingleQueryParam, requiredEnv } from "../../src/hosted/http.js";
+import { getSingleQueryParam, requiredEnv, requiredEnvAny } from "../../src/hosted/http.js";
 import { getHostedGraphSvg } from "../../src/hosted/service.js";
 import { createHostedStore } from "../../src/hosted/store.js";
 import { renderContributionGraph, type GraphTheme } from "../../src/render.js";
@@ -24,7 +24,7 @@ function fallbackSvg(theme: GraphTheme): string {
     levelsByDate: {},
     endDate: startOfUtcDay(new Date()),
     theme,
-    title: "FitHub not connected"
+    title: "git big not connected"
   });
 }
 
@@ -50,11 +50,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       store: createHostedStore(),
       stravaClientId: requiredEnv("STRAVA_CLIENT_ID"),
       stravaClientSecret: requiredEnv("STRAVA_CLIENT_SECRET"),
-      tokenEncryptionKey: requiredEnv("FITHUB_TOKEN_ENCRYPTION_KEY")
+      tokenEncryptionKey: requiredEnvAny([
+        "GITBIG_TOKEN_ENCRYPTION_KEY",
+        "FITHUB_TOKEN_ENCRYPTION_KEY"
+      ])
     });
 
     res.setHeader("Content-Type", "image/svg+xml; charset=utf-8");
     res.setHeader("Cache-Control", "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400");
+    res.setHeader("X-Git-Big-Source", result.source);
     res.setHeader("X-FitHub-Source", result.source);
     res.status(200).send(result.svg);
   } catch (error) {
@@ -62,6 +66,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     if (message.includes("is not connected to Strava")) {
       res.setHeader("Content-Type", "image/svg+xml; charset=utf-8");
       res.setHeader("Cache-Control", "public, max-age=60, s-maxage=60");
+      res.setHeader("X-Git-Big-Source", "not-connected");
       res.setHeader("X-FitHub-Source", "not-connected");
       res.status(200).send(fallbackSvg(theme));
       return;

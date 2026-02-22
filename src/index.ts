@@ -27,7 +27,7 @@ export function parseEndDate(configuredEndDate: string | undefined): Date {
 
   const parsed = new Date(`${configuredEndDate}T00:00:00Z`);
   if (Number.isNaN(parsed.getTime())) {
-    throw new Error(`Invalid FITHUB_END_DATE value: ${configuredEndDate}`);
+    throw new Error(`Invalid GITBIG_END_DATE value: ${configuredEndDate}`);
   }
 
   return startOfUtcDay(parsed);
@@ -36,14 +36,21 @@ export function parseEndDate(configuredEndDate: string | undefined): Date {
 async function generateGraph(
   credentials: StravaCredentials,
   outputPaths: {
-    legacySvgPath: string;
+    svgPath: string;
     darkSvgPath: string;
     lightSvgPath: string;
     levelsPath: string;
+    legacyOutputPaths?: {
+      svgPath: string;
+      darkSvgPath: string;
+      lightSvgPath: string;
+      levelsPath: string;
+    };
   }
 ): Promise<void> {
-  const endDate = parseEndDate(process.env.FITHUB_END_DATE);
-  const refreshTokenOutputPath = process.env.FITHUB_REFRESH_TOKEN_OUTPUT;
+  const endDate = parseEndDate(process.env.GITBIG_END_DATE ?? process.env.FITHUB_END_DATE);
+  const refreshTokenOutputPath =
+    process.env.GITBIG_REFRESH_TOKEN_OUTPUT ?? process.env.FITHUB_REFRESH_TOKEN_OUTPUT;
 
   const { activities, refreshToken } = await fetchLastYearActivitiesWithRefreshToken(credentials, endDate);
   const minutesByDate = aggregateMinutesByDate(activities);
@@ -72,13 +79,26 @@ async function generateGraph(
     theme: "light"
   });
 
-  await mkdir(dirname(outputPaths.legacySvgPath), { recursive: true });
+  await mkdir(dirname(outputPaths.svgPath), { recursive: true });
   await Promise.all([
-    writeFile(outputPaths.legacySvgPath, darkSvg, "utf8"),
+    writeFile(outputPaths.svgPath, darkSvg, "utf8"),
     writeFile(outputPaths.darkSvgPath, darkSvg, "utf8"),
     writeFile(outputPaths.lightSvgPath, lightSvg, "utf8"),
     writeFile(outputPaths.levelsPath, `${JSON.stringify(lastYearLevelsByDate, null, 2)}\n`, "utf8")
   ]);
+
+  if (outputPaths.legacyOutputPaths) {
+    await Promise.all([
+      writeFile(outputPaths.legacyOutputPaths.svgPath, darkSvg, "utf8"),
+      writeFile(outputPaths.legacyOutputPaths.darkSvgPath, darkSvg, "utf8"),
+      writeFile(outputPaths.legacyOutputPaths.lightSvgPath, lightSvg, "utf8"),
+      writeFile(
+        outputPaths.legacyOutputPaths.levelsPath,
+        `${JSON.stringify(lastYearLevelsByDate, null, 2)}\n`,
+        "utf8"
+      )
+    ]);
+  }
 
   if (refreshTokenOutputPath) {
     await mkdir(dirname(refreshTokenOutputPath), { recursive: true });
@@ -93,16 +113,22 @@ async function main(): Promise<void> {
     refreshToken: requiredEnv("STRAVA_REFRESH_TOKEN")
   };
 
-  const svgPath = resolve(process.cwd(), "dist", "fithub.svg");
-  const darkSvgPath = resolve(process.cwd(), "dist", "fithub-dark.svg");
-  const lightSvgPath = resolve(process.cwd(), "dist", "fithub-light.svg");
-  const levelsPath = resolve(process.cwd(), "dist", "fithub-levels.json");
+  const svgPath = resolve(process.cwd(), "dist", "git-big.svg");
+  const darkSvgPath = resolve(process.cwd(), "dist", "git-big-dark.svg");
+  const lightSvgPath = resolve(process.cwd(), "dist", "git-big-light.svg");
+  const levelsPath = resolve(process.cwd(), "dist", "git-big-levels.json");
 
   await generateGraph(credentials, {
-    legacySvgPath: svgPath,
+    svgPath,
     darkSvgPath,
     lightSvgPath,
-    levelsPath
+    levelsPath,
+    legacyOutputPaths: {
+      svgPath: resolve(process.cwd(), "dist", "fithub.svg"),
+      darkSvgPath: resolve(process.cwd(), "dist", "fithub-dark.svg"),
+      lightSvgPath: resolve(process.cwd(), "dist", "fithub-light.svg"),
+      levelsPath: resolve(process.cwd(), "dist", "fithub-levels.json")
+    }
   });
   process.stdout.write(`Generated ${svgPath}\n`);
   process.stdout.write(`Generated ${darkSvgPath}\n`);

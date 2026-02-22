@@ -111,7 +111,7 @@ async function main(): Promise<void> {
   });
 
   try {
-    process.stdout.write("FitHub setup wizard\n\n");
+    process.stdout.write("`git big` setup wizard\n\n");
 
     await ensureGhReady();
 
@@ -159,7 +159,7 @@ async function main(): Promise<void> {
       await setRepoSecret(repo, "REPO_ADMIN_TOKEN", adminToken);
     }
 
-    const runWorkflowAnswer = await rl.question("Run 'Update FitHub Graph' workflow now? [Y/n]: ");
+    const runWorkflowAnswer = await rl.question("Run 'Update Git Big Graph' workflow now? [Y/n]: ");
     if (isAffirmative(runWorkflowAnswer, true)) {
       await runCommand("gh", ["workflow", "run", "update.yml", "--repo", repo]);
       process.stdout.write("Triggered workflow: update.yml\n");

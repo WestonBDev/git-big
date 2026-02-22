@@ -1,7 +1,7 @@
 {
-  "name": "fithub-graph",
+  "name": "git-big",
   "version": "0.1.0",
-  "description": "GitHub-native fitness contribution graph powered by Strava data",
+  "description": "git big: GitHub-native fitness contribution graph powered by Strava data",
   "type": "module",
   "private": false,
   "engines": {

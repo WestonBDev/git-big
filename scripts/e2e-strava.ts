@@ -35,10 +35,10 @@ async function runGenerate(env: NodeJS.ProcessEnv): Promise<void> {
 }
 
 async function validateArtifacts(cwd: string): Promise<{ totalDays: number; activeDays: number }> {
-  const svgPath = resolve(cwd, "dist", "fithub.svg");
-  const darkSvgPath = resolve(cwd, "dist", "fithub-dark.svg");
-  const lightSvgPath = resolve(cwd, "dist", "fithub-light.svg");
-  const levelsPath = resolve(cwd, "dist", "fithub-levels.json");
+  const svgPath = resolve(cwd, "dist", "git-big.svg");
+  const darkSvgPath = resolve(cwd, "dist", "git-big-dark.svg");
+  const lightSvgPath = resolve(cwd, "dist", "git-big-light.svg");
+  const levelsPath = resolve(cwd, "dist", "git-big-levels.json");
 
   await access(svgPath, constants.F_OK);
   await access(darkSvgPath, constants.F_OK);
@@ -53,34 +53,34 @@ async function validateArtifacts(cwd: string): Promise<{ totalDays: number; acti
   ]);
 
   if (!svg.startsWith("<svg")) {
-    throw new Error("dist/fithub.svg is not a valid SVG root.");
+    throw new Error("dist/git-big.svg is not a valid SVG root.");
   }
 
   if (!darkSvg.startsWith("<svg")) {
-    throw new Error("dist/fithub-dark.svg is not a valid SVG root.");
+    throw new Error("dist/git-big-dark.svg is not a valid SVG root.");
   }
 
   if (!lightSvg.startsWith("<svg")) {
-    throw new Error("dist/fithub-light.svg is not a valid SVG root.");
+    throw new Error("dist/git-big-light.svg is not a valid SVG root.");
   }
 
   if (!svg.includes("data-date=")) {
-    throw new Error("dist/fithub.svg does not contain day cells.");
+    throw new Error("dist/git-big.svg does not contain day cells.");
   }
 
   if (darkSvg.includes('<rect width="100%" height="100%"')) {
-    throw new Error("dist/fithub-dark.svg should not include a full-canvas background rect.");
+    throw new Error("dist/git-big-dark.svg should not include a full-canvas background rect.");
   }
 
   if (lightSvg.includes('<rect width="100%" height="100%"')) {
-    throw new Error("dist/fithub-light.svg should not include a full-canvas background rect.");
+    throw new Error("dist/git-big-light.svg should not include a full-canvas background rect.");
   }
 
   const parsedLevels = JSON.parse(levelsRaw) as Record<string, number>;
   const entries = Object.entries(parsedLevels).sort(([left], [right]) => left.localeCompare(right));
 
   if (entries.length < 365 || entries.length > 366) {
-    throw new Error(`dist/fithub-levels.json expected 365-366 entries, got ${entries.length}.`);
+    throw new Error(`dist/git-big-levels.json expected 365-366 entries, got ${entries.length}.`);
   }
 
   const activeDays = entries.filter(([, value]) => value > 0).length;

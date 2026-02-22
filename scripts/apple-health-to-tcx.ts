@@ -7,6 +7,7 @@ interface ParsedWorkout {
   activityType: string;
   durationSeconds: number;
   startDate: string;
+  endDate: string;
 }
 
 function extractAttr(line: string, name: string): string | undefined {
@@ -36,20 +37,29 @@ function mapSport(activityType: string): string {
 
 function buildTcx(workout: ParsedWorkout): string {
   const sport = mapSport(workout.activityType);
-  const iso = toIsoTimestamp(workout.startDate);
+  const startIso = toIsoTimestamp(workout.startDate);
+  const endIso = toIsoTimestamp(workout.endDate);
 
   return [
     `<?xml version="1.0" encoding="UTF-8"?>`,
     `<TrainingCenterDatabase xmlns="http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2">`,
     `  <Activities>`,
     `    <Activity Sport="${sport}">`,
-    `      <Id>${iso}</Id>`,
-    `      <Lap StartTime="${iso}">`,
+    `      <Id>${startIso}</Id>`,
+    `      <Lap StartTime="${startIso}">`,
     `        <TotalTimeSeconds>${workout.durationSeconds.toFixed(1)}</TotalTimeSeconds>`,
     `        <DistanceMeters>0</DistanceMeters>`,
     `        <Calories>0</Calories>`,
     `        <Intensity>Active</Intensity>`,
     `        <TriggerMethod>Manual</TriggerMethod>`,
+    `        <Track>`,
+    `          <Trackpoint>`,
+    `            <Time>${startIso}</Time>`,
+    `          </Trackpoint>`,
+    `          <Trackpoint>`,
+    `            <Time>${endIso}</Time>`,
+    `          </Trackpoint>`,
+    `        </Track>`,
     `      </Lap>`,
     `    </Activity>`,
     `  </Activities>`,
@@ -126,11 +136,12 @@ async function main(): Promise<void> {
         const durationRaw = extractAttr(currentTag, "duration");
         const durationUnit = extractAttr(currentTag, "durationUnit") ?? "min";
         const startDate = extractAttr(currentTag, "startDate");
+        const endDate = extractAttr(currentTag, "endDate");
 
         const durationSeconds = parseDurationSeconds(durationRaw, durationUnit);
 
-        if (startDate && durationSeconds > 0) {
-          const workout: ParsedWorkout = { activityType, durationSeconds, startDate };
+        if (startDate && endDate && durationSeconds > 0) {
+          const workout: ParsedWorkout = { activityType, durationSeconds, startDate, endDate };
           const filename = `workout_${toSafeFilename(startDate)}.tcx`;
           await writeFile(join(outDir, filename), buildTcx(workout), "utf8");
           written++;
@@ -151,7 +162,7 @@ async function main(): Promise<void> {
     `\nNext steps:\n` +
       `  1. Upload TCX files to https://www.strava.com/upload/select (25 at a time)\n` +
       `  2. Upload GPX files from workout-routes/ for GPS-tracked activities\n` +
-      `  3. Re-run 'npm run generate' to rebuild the FitHub graph\n`
+      `  3. Re-run 'npm run generate' to rebuild the \`git big\` graph\n`
   );
 }
 

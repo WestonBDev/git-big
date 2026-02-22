@@ -1,6 +1,6 @@
 # Hosted Mode (Vercel)
 
-This mode gives you a low-friction setup like `githubchart-api`: one shared hosted API, one Strava connect click, and a profile widget URL.
+This mode gives you a low-friction setup like `githubchart-api`: one shared hosted API, one Strava connect click, and a profile widget URL for `git big`.
 
 Self-host mode (GitHub Actions + your own Strava app) remains fully supported and unchanged.
 
@@ -30,13 +30,14 @@ Required:
 
 - `STRAVA_CLIENT_ID`: shared Strava app client id.
 - `STRAVA_CLIENT_SECRET`: shared Strava app secret.
-- `FITHUB_STATE_SECRET`: random secret used to sign OAuth state.
-- `FITHUB_TOKEN_ENCRYPTION_KEY`: 32-byte key as 64-char hex or base64/base64url.
-- `FITHUB_PUBLIC_BASE_URL`: deployed base URL, e.g. `https://fithub.yourdomain.com`.
+- `GITBIG_STATE_SECRET`: random secret used to sign OAuth state.
+- `GITBIG_TOKEN_ENCRYPTION_KEY`: 32-byte key as 64-char hex or base64/base64url.
+- `GITBIG_PUBLIC_BASE_URL`: deployed base URL, e.g. `https://gitbig.yourdomain.com`.
 
 Optional:
 
-- `FITHUB_CRON_SECRET`: cron auth secret (or use Vercel `CRON_SECRET`).
+- `GITBIG_CRON_SECRET`: cron auth secret (or use Vercel `CRON_SECRET`).
+- Legacy `FITHUB_*` env names are still supported for backward compatibility.
 
 ## 4. Strava app callback config
 
@@ -66,7 +67,7 @@ After OAuth, callback page returns the exact README snippet to paste.
 
 `vercel.json` includes a cron entry for `/api/cron/refresh`.
 
-If you configure `CRON_SECRET` (recommended) or `FITHUB_CRON_SECRET`, the endpoint accepts:
+If you configure `CRON_SECRET` (recommended), `GITBIG_CRON_SECRET`, or `FITHUB_CRON_SECRET`, the endpoint accepts:
 
 - `Authorization: Bearer <secret>`
 - or `?secret=<secret>` for manual runs.

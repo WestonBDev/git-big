@@ -29,7 +29,7 @@ describe("api /strava/callback", () => {
   it("rejects missing code/state", async () => {
     process.env = {
       ...originalEnv,
-      FITHUB_STATE_SECRET: "state-secret"
+      GITBIG_STATE_SECRET: "state-secret"
     };
 
     const req = createMockRequest({ query: {} });
@@ -48,8 +48,8 @@ describe("api /strava/callback", () => {
       ...originalEnv,
       STRAVA_CLIENT_ID: "204011",
       STRAVA_CLIENT_SECRET: "client-secret",
-      FITHUB_STATE_SECRET: "state-secret",
-      FITHUB_TOKEN_ENCRYPTION_KEY: "1111111111111111111111111111111111111111111111111111111111111111",
+      GITBIG_STATE_SECRET: "state-secret",
+      GITBIG_TOKEN_ENCRYPTION_KEY: "1111111111111111111111111111111111111111111111111111111111111111",
       UPSTASH_REDIS_REST_URL: "",
       UPSTASH_REDIS_REST_TOKEN: ""
     };
@@ -88,7 +88,7 @@ describe("api /strava/callback", () => {
 
     expect(capture.statusCode).toBe(200);
     expect(capture.headers["content-type"]).toBe("text/html; charset=utf-8");
-    expect(capture.sentBody).toContain("FitHub connected for WestonBDev");
+    expect(capture.sentBody).toContain("<code>git big</code> connected for WestonBDev");
     expect(capture.sentBody).toContain("/api/graph/WestonBDev.svg?theme=light#gh-light-mode-only");
     expect(capture.sentBody).toContain("/api/strava/connect?github=WestonBDev");
 
@@ -99,7 +99,7 @@ describe("api /strava/callback", () => {
 
     const decrypted = decryptTokenSecret(
       athlete?.encryptedRefreshToken ?? "",
-      process.env.FITHUB_TOKEN_ENCRYPTION_KEY ?? ""
+      process.env.GITBIG_TOKEN_ENCRYPTION_KEY ?? ""
     );
     expect(decrypted).toBe("refresh-token");
   });
@@ -109,8 +109,8 @@ describe("api /strava/callback", () => {
       ...originalEnv,
       STRAVA_CLIENT_ID: "204011",
       STRAVA_CLIENT_SECRET: "client-secret",
-      FITHUB_STATE_SECRET: "state-secret",
-      FITHUB_TOKEN_ENCRYPTION_KEY: "1111111111111111111111111111111111111111111111111111111111111111",
+      GITBIG_STATE_SECRET: "state-secret",
+      GITBIG_TOKEN_ENCRYPTION_KEY: "1111111111111111111111111111111111111111111111111111111111111111",
       UPSTASH_REDIS_REST_URL: "",
       UPSTASH_REDIS_REST_TOKEN: ""
     };
@@ -134,8 +134,8 @@ describe("api /strava/callback", () => {
       ...originalEnv,
       STRAVA_CLIENT_ID: "204011",
       STRAVA_CLIENT_SECRET: "client-secret",
-      FITHUB_STATE_SECRET: "state-secret",
-      FITHUB_TOKEN_ENCRYPTION_KEY: "1111111111111111111111111111111111111111111111111111111111111111",
+      GITBIG_STATE_SECRET: "state-secret",
+      GITBIG_TOKEN_ENCRYPTION_KEY: "1111111111111111111111111111111111111111111111111111111111111111",
       UPSTASH_REDIS_REST_URL: "",
       UPSTASH_REDIS_REST_TOKEN: ""
     };

@@ -41,8 +41,8 @@ describe("setup helpers", () => {
   it("builds theme-aware profile widget markdown", () => {
     const snippet = buildThemeAwareWidgetMarkdown("WestonBDev/git-big");
 
-    expect(snippet).toContain("fithub-light.svg#gh-light-mode-only");
-    expect(snippet).toContain("fithub-dark.svg#gh-dark-mode-only");
+    expect(snippet).toContain("git-big-light.svg#gh-light-mode-only");
+    expect(snippet).toContain("git-big-dark.svg#gh-dark-mode-only");
   });
 
   it("builds hosted profile widget markdown", () => {

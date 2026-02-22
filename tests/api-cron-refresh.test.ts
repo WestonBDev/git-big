@@ -43,7 +43,7 @@ describe("api /cron/refresh", () => {
   it("rejects unauthorized requests", async () => {
     process.env = {
       ...originalEnv,
-      FITHUB_CRON_SECRET: "cron-secret"
+      GITBIG_CRON_SECRET: "cron-secret"
     };
 
     const req = createMockRequest({
@@ -63,10 +63,10 @@ describe("api /cron/refresh", () => {
   it("accepts bearer auth and returns refresh summary", async () => {
     process.env = {
       ...originalEnv,
-      FITHUB_CRON_SECRET: "cron-secret",
+      GITBIG_CRON_SECRET: "cron-secret",
       STRAVA_CLIENT_ID: "204011",
       STRAVA_CLIENT_SECRET: "client-secret",
-      FITHUB_TOKEN_ENCRYPTION_KEY: "1111111111111111111111111111111111111111111111111111111111111111"
+      GITBIG_TOKEN_ENCRYPTION_KEY: "1111111111111111111111111111111111111111111111111111111111111111"
     };
 
     mocks.refreshAllHostedGraphs.mockResolvedValue({
@@ -109,7 +109,7 @@ describe("api /cron/refresh", () => {
       CRON_SECRET: "legacy-secret",
       STRAVA_CLIENT_ID: "204011",
       STRAVA_CLIENT_SECRET: "client-secret",
-      FITHUB_TOKEN_ENCRYPTION_KEY: "1111111111111111111111111111111111111111111111111111111111111111"
+      GITBIG_TOKEN_ENCRYPTION_KEY: "1111111111111111111111111111111111111111111111111111111111111111"
     };
 
     mocks.refreshAllHostedGraphs.mockResolvedValue({
@@ -141,10 +141,10 @@ describe("api /cron/refresh", () => {
   it("returns 500 when refresh operation fails", async () => {
     process.env = {
       ...originalEnv,
-      FITHUB_CRON_SECRET: "cron-secret",
+      GITBIG_CRON_SECRET: "cron-secret",
       STRAVA_CLIENT_ID: "204011",
       STRAVA_CLIENT_SECRET: "client-secret",
-      FITHUB_TOKEN_ENCRYPTION_KEY: "1111111111111111111111111111111111111111111111111111111111111111"
+      GITBIG_TOKEN_ENCRYPTION_KEY: "1111111111111111111111111111111111111111111111111111111111111111"
     };
 
     mocks.refreshAllHostedGraphs.mockRejectedValue(new Error("rate limited"));
@@ -166,6 +166,7 @@ describe("api /cron/refresh", () => {
   it("rejects requests when no cron secret is configured", async () => {
     process.env = {
       ...originalEnv,
+      GITBIG_CRON_SECRET: "",
       FITHUB_CRON_SECRET: "",
       CRON_SECRET: ""
     };

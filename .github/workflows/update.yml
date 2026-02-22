@@ -1,4 +1,4 @@
-name: Update FitHub Graph
+name: Update Git Big Graph
 
 on:
   workflow_dispatch:
@@ -30,7 +30,7 @@ jobs:
           STRAVA_CLIENT_ID: ${{ secrets.STRAVA_CLIENT_ID }}
           STRAVA_CLIENT_SECRET: ${{ secrets.STRAVA_CLIENT_SECRET }}
           STRAVA_REFRESH_TOKEN: ${{ secrets.STRAVA_REFRESH_TOKEN }}
-          FITHUB_REFRESH_TOKEN_OUTPUT: ${{ runner.temp }}/strava_refresh_token.txt
+          GITBIG_REFRESH_TOKEN_OUTPUT: ${{ runner.temp }}/strava_refresh_token.txt
         run: npm run generate
 
       - name: Rotate Strava refresh token secret
@@ -58,11 +58,11 @@ jobs:
 
       - name: Commit graph artifacts
         run: |
-          if [[ -n "$(git status --porcelain dist/fithub.svg dist/fithub-dark.svg dist/fithub-light.svg dist/fithub-levels.json)" ]]; then
+          if [[ -n "$(git status --porcelain dist/git-big.svg dist/git-big-dark.svg dist/git-big-light.svg dist/git-big-levels.json dist/fithub.svg dist/fithub-dark.svg dist/fithub-light.svg dist/fithub-levels.json)" ]]; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add dist/fithub.svg dist/fithub-dark.svg dist/fithub-light.svg dist/fithub-levels.json
-            git commit -m "chore: update FitHub graph"
+            git add dist/git-big.svg dist/git-big-dark.svg dist/git-big-light.svg dist/git-big-levels.json dist/fithub.svg dist/fithub-dark.svg dist/fithub-light.svg dist/fithub-levels.json
+            git commit -m "chore: update git big graph"
             git push
           else
             echo "No graph changes"

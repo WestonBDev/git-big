@@ -1,11 +1,11 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
-import { getSingleQueryParam, requiredEnv } from "../../src/hosted/http.js";
+import { getSingleQueryParam, requiredEnv, requiredEnvAny } from "../../src/hosted/http.js";
 import { refreshAllHostedGraphs } from "../../src/hosted/service.js";
 import { createHostedStore } from "../../src/hosted/store.js";
 
 function isAuthorized(req: VercelRequest): boolean {
-  const configuredSecrets = [process.env.FITHUB_CRON_SECRET, process.env.CRON_SECRET]
+  const configuredSecrets = [process.env.GITBIG_CRON_SECRET, process.env.FITHUB_CRON_SECRET, process.env.CRON_SECRET]
     .map((value) => value?.trim())
     .filter((value): value is string => Boolean(value));
 
@@ -38,7 +38,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       store: createHostedStore(),
       stravaClientId: requiredEnv("STRAVA_CLIENT_ID"),
       stravaClientSecret: requiredEnv("STRAVA_CLIENT_SECRET"),
-      tokenEncryptionKey: requiredEnv("FITHUB_TOKEN_ENCRYPTION_KEY")
+      tokenEncryptionKey: requiredEnvAny([
+        "GITBIG_TOKEN_ENCRYPTION_KEY",
+        "FITHUB_TOKEN_ENCRYPTION_KEY"
+      ])
     });
 
     res.status(200).json(summary);

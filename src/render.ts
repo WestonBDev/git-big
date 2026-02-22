@@ -255,5 +255,5 @@ export function renderContributionGraph(options: RenderOptions): string {
     })
     .join("");
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="fithub-title"><title id="fithub-title">${escapeXml(title)}</title><desc>Daily workout intensity rendered like a GitHub contribution graph.</desc><g transform="translate(${marginLeft},${marginTop})"><g>${summary}</g><g>${monthText}</g><g>${weekdayText}</g><g>${rects}</g></g></svg>\n`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="git-big-title"><title id="git-big-title">${escapeXml(title)}</title><desc>Daily workout intensity rendered like a GitHub contribution graph.</desc><g transform="translate(${marginLeft},${marginTop})"><g>${summary}</g><g>${monthText}</g><g>${weekdayText}</g><g>${rects}</g></g></svg>\n`;
 }

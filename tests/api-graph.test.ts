@@ -55,7 +55,7 @@ describe("api /graph/[github]", () => {
       ...originalEnv,
       STRAVA_CLIENT_ID: "204011",
       STRAVA_CLIENT_SECRET: "client-secret",
-      FITHUB_TOKEN_ENCRYPTION_KEY: "1111111111111111111111111111111111111111111111111111111111111111"
+      GITBIG_TOKEN_ENCRYPTION_KEY: "1111111111111111111111111111111111111111111111111111111111111111"
     };
 
     mocks.getHostedGraphSvg.mockResolvedValue({
@@ -89,6 +89,7 @@ describe("api /graph/[github]", () => {
     expect(capture.headers["cache-control"]).toBe(
       "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400"
     );
+    expect(capture.headers["x-git-big-source"]).toBe("cache");
     expect(capture.headers["x-fithub-source"]).toBe("cache");
     expect(capture.sentBody).toBe("<svg><title>ok</title></svg>");
   });
@@ -98,7 +99,7 @@ describe("api /graph/[github]", () => {
       ...originalEnv,
       STRAVA_CLIENT_ID: "204011",
       STRAVA_CLIENT_SECRET: "client-secret",
-      FITHUB_TOKEN_ENCRYPTION_KEY: "1111111111111111111111111111111111111111111111111111111111111111"
+      GITBIG_TOKEN_ENCRYPTION_KEY: "1111111111111111111111111111111111111111111111111111111111111111"
     };
 
     mocks.getHostedGraphSvg.mockRejectedValue(
@@ -117,8 +118,9 @@ describe("api /graph/[github]", () => {
     expect(capture.statusCode).toBe(200);
     expect(capture.headers["content-type"]).toBe("image/svg+xml; charset=utf-8");
     expect(capture.headers["cache-control"]).toBe("public, max-age=60, s-maxage=60");
+    expect(capture.headers["x-git-big-source"]).toBe("not-connected");
     expect(capture.headers["x-fithub-source"]).toBe("not-connected");
-    expect(capture.sentBody).toContain("FitHub not connected");
+    expect(capture.sentBody).toContain("git big not connected");
   });
 
   it("returns 500 for unexpected errors", async () => {
@@ -126,7 +128,7 @@ describe("api /graph/[github]", () => {
       ...originalEnv,
       STRAVA_CLIENT_ID: "204011",
       STRAVA_CLIENT_SECRET: "client-secret",
-      FITHUB_TOKEN_ENCRYPTION_KEY: "1111111111111111111111111111111111111111111111111111111111111111"
+      GITBIG_TOKEN_ENCRYPTION_KEY: "1111111111111111111111111111111111111111111111111111111111111111"
     };
 
     mocks.getHostedGraphSvg.mockRejectedValue(new Error("upstream failed"));

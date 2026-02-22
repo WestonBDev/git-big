@@ -67,14 +67,14 @@ export function isAffirmative(input: string, defaultValue: boolean): boolean {
 }
 
 export function buildWidgetMarkdown(repoSlug: string, branch: string = "main"): string {
-  return `![Fitness Graph](https://raw.githubusercontent.com/${repoSlug}/${branch}/dist/fithub.svg)`;
+  return `![Fitness Graph](https://raw.githubusercontent.com/${repoSlug}/${branch}/dist/git-big.svg)`;
 }
 
 export function buildThemeAwareWidgetMarkdown(repoSlug: string, branch: string = "main"): string {
   const baseUrl = `https://raw.githubusercontent.com/${repoSlug}/${branch}/dist`;
   return [
-    `![Fitness Graph](<${baseUrl}/fithub-light.svg#gh-light-mode-only>)`,
-    `![Fitness Graph](<${baseUrl}/fithub-dark.svg#gh-dark-mode-only>)`
+    `![Fitness Graph](<${baseUrl}/git-big-light.svg#gh-light-mode-only>)`,
+    `![Fitness Graph](<${baseUrl}/git-big-dark.svg#gh-dark-mode-only>)`
   ].join("\n");
 }
 

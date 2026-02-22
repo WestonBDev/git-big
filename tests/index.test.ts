@@ -18,7 +18,7 @@ describe("index config parsing", () => {
 
   it("throws for invalid end date", () => {
     expect(() => parseEndDate("not-a-date")).toThrowError(
-      "Invalid FITHUB_END_DATE value: not-a-date"
+      "Invalid GITBIG_END_DATE value: not-a-date"
     );
   });
 });
