@@ -144,13 +144,14 @@ export function bucketMinutes(
 }
 
 export function normalizeMinutesByDate(
-  minutesByDate: Record<string, number>
+  minutesByDate: Record<string, number>,
+  overrideBoundaries?: IntensityBoundaries
 ): Record<string, IntensityLevel> {
   const normalizedInput = Object.fromEntries(
     Object.entries(minutesByDate).map(([date, minutes]) => [date, sanitizeMinutes(minutes)])
   );
 
-  const boundaries = deriveIntensityBoundaries(Object.values(normalizedInput));
+  const boundaries = overrideBoundaries ?? deriveIntensityBoundaries(Object.values(normalizedInput));
   const normalized = Object.fromEntries(
     Object.entries(normalizedInput).map(([date, minutes]) => [date, bucketMinutes(minutes, boundaries)])
   );

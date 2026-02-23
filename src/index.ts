@@ -7,7 +7,8 @@ import { fetchLastYearActivitiesWithRefreshToken, type StravaCredentials } from 
 import {
   aggregateMinutesByDate,
   fillDateRange,
-  normalizeMinutesByDate
+  normalizeMinutesByDate,
+  type IntensityBoundaries
 } from "./normalize.js";
 import { renderContributionGraph } from "./render.js";
 
@@ -18,6 +19,19 @@ function requiredEnv(name: string): string {
   }
 
   return value;
+}
+
+export function parseThresholds(raw: string | undefined): IntensityBoundaries | undefined {
+  if (!raw) {
+    return undefined;
+  }
+
+  const parts = raw.split(",").map((s) => Number(s.trim()));
+  if (parts.length !== 4 || parts.some((n) => !Number.isFinite(n) || n < 0)) {
+    throw new Error(`Invalid thresholds: expected 4 comma-separated numbers, got "${raw}"`);
+  }
+
+  return [0, parts[0], parts[1], parts[2], parts[3]] as unknown as IntensityBoundaries;
 }
 
 export function parseEndDate(configuredEndDate: string | undefined): Date {
@@ -51,12 +65,15 @@ async function generateGraph(
   const endDate = parseEndDate(process.env.GITBIG_END_DATE ?? process.env.FITHUB_END_DATE);
   const refreshTokenOutputPath =
     process.env.GITBIG_REFRESH_TOKEN_OUTPUT ?? process.env.FITHUB_REFRESH_TOKEN_OUTPUT;
+  const overrideBoundaries = parseThresholds(
+    process.env.GITBIG_THRESHOLDS ?? process.env.FITHUB_THRESHOLDS
+  );
 
   const { activities, refreshToken } = await fetchLastYearActivitiesWithRefreshToken(credentials, endDate);
   const minutesByDate = aggregateMinutesByDate(activities);
   const yearStart = addDaysUtc(endDate, -364);
   const lastYearMinutesByDate = fillDateRange(minutesByDate, yearStart, endDate);
-  const lastYearLevelsByDate = normalizeMinutesByDate(lastYearMinutesByDate);
+  const lastYearLevelsByDate = normalizeMinutesByDate(lastYearMinutesByDate, overrideBoundaries);
 
   const renderStart = startOfWeekSunday(addDaysUtc(endDate, -364));
   const renderEnd = endOfWeekSaturday(endDate);

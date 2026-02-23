@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { parseEndDate } from "../src/index.js";
+import { parseEndDate, parseThresholds } from "../src/index.js";
 
 describe("index config parsing", () => {
   it("defaults to current UTC day when unset", () => {
@@ -20,5 +20,33 @@ describe("index config parsing", () => {
     expect(() => parseEndDate("not-a-date")).toThrowError(
       "Invalid GITBIG_END_DATE value: not-a-date"
     );
+  });
+});
+
+describe("parseThresholds", () => {
+  it("returns undefined when unset", () => {
+    expect(parseThresholds(undefined)).toBeUndefined();
+    expect(parseThresholds("")).toBeUndefined();
+  });
+
+  it("parses valid thresholds into IntensityBoundaries", () => {
+    expect(parseThresholds("1,20,40,60")).toEqual([0, 1, 20, 40, 60]);
+  });
+
+  it("trims whitespace around values", () => {
+    expect(parseThresholds(" 1 , 20 , 40 , 60 ")).toEqual([0, 1, 20, 40, 60]);
+  });
+
+  it("throws for wrong number of values", () => {
+    expect(() => parseThresholds("1,20,40")).toThrowError("expected 4 comma-separated numbers");
+    expect(() => parseThresholds("1,20,40,60,80")).toThrowError("expected 4 comma-separated numbers");
+  });
+
+  it("throws for non-numeric values", () => {
+    expect(() => parseThresholds("a,b,c,d")).toThrowError("expected 4 comma-separated numbers");
+  });
+
+  it("throws for negative values", () => {
+    expect(() => parseThresholds("1,-20,40,60")).toThrowError("expected 4 comma-separated numbers");
   });
 });
